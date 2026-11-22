@@ -1,0 +1,138 @@
+import { createServer } from 'node:http';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadConfig } from './config.js';
+import { createAuth } from './auth.js';
+import { createMaps, MapsError } from './maps.js';
+import { serveStatic } from './static.js';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const PUBLIC = join(ROOT, 'public');
+const LOGIN_HTML = readFileSync(join(ROOT, 'views', 'login.html'), 'utf8');
+
+// Política de segurança do conteúdo: o app só carrega recursos próprios e do Google Maps
+const G = '*.googleapis.com *.gstatic.com *.google.com';
+const CSP = [
+  "default-src 'self'",
+  `script-src 'self' ${G} *.ggpht.com *.googleusercontent.com blob:`,
+  `style-src 'self' 'unsafe-inline' ${G}`,
+  `img-src 'self' data: blob: ${G} *.ggpht.com *.googleusercontent.com`,
+  `connect-src 'self' ${G} data: blob:`,
+  `font-src 'self' *.gstatic.com data:`,
+  "worker-src blob:",
+  "frame-src *.google.com",
+  "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'"
+].join('; ');
+
+function securityHeaders(res, secure){
+  res.setHeader('Content-Security-Policy', CSP);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+}
+
+function readBody(req, limit = 2048){
+  return new Promise((resolve, reject) => {
+    let size = 0; const chunks = [];
+    req.on('data', c => { size += c.length; if (size > limit) { reject(Object.assign(new Error('corpo grande demais'), { status: 413 })); req.destroy(); } else chunks.push(c); });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+const json = (res, status, data) => {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(JSON.stringify(data));
+};
+const redirect = (res, to, headers = {}) => { res.writeHead(303, { Location: to, ...headers }); res.end(); };
+const loginPage = (res, status, msg = '') => {
+  const html = LOGIN_HTML.replace('{{MSG}}', msg ? `<p class="err" role="alert">${msg}</p>` : '');
+  res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(html);
+};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+export function createApp(config, { maps = createMaps(config.maps) } = {}){
+  const auth = createAuth(config);
+
+  const isSecure = req => !!req.socket.encrypted || (config.trustProxy && req.headers['x-forwarded-proto'] === 'https');
+  const clientIp = req => (config.trustProxy && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress || '';
+
+  async function handle(req, res){
+    const secure = isSecure(req);
+    securityHeaders(res, secure);
+    const url = new URL(req.url, 'http://localhost');
+    const { pathname } = url, method = req.method;
+
+    if (pathname === '/healthz') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('ok'); }
+
+    const token = auth.tokenFrom(req), authed = auth.valid(token);
+
+    if (pathname === '/login') {
+      if (method === 'GET') return authed ? redirect(res, '/') : loginPage(res, 200);
+      if (method === 'POST') {
+        const ip = clientIp(req);
+        if (auth.isLocked(ip)) return loginPage(res, 429, 'Muitas tentativas. Aguarde 15 minutos e tente de novo.');
+        const pw = new URLSearchParams(await readBody(req)).get('password') || '';
+        if (auth.check(pw)) {
+          auth.clearFails(ip);
+          return redirect(res, '/', { 'Set-Cookie': auth.cookie(auth.create(), { secure }) });
+        }
+        auth.fail(ip);
+        await sleep(400);
+        return loginPage(res, 401, 'Senha incorreta.');
+      }
+      res.writeHead(405, { Allow: 'GET, POST' }); return res.end();
+    }
+
+    if (pathname === '/logout' && method === 'POST') {
+      auth.destroy(token);
+      return redirect(res, '/login', { 'Set-Cookie': auth.clearCookie({ secure }) });
+    }
+
+    // Tudo abaixo exige login
+    if (!authed) {
+      if (pathname.startsWith('/api/')) return json(res, 401, { error: 'não autenticado' });
+      return redirect(res, '/login');
+    }
+
+    if (pathname === '/api/config' && method === 'GET') {
+      return json(res, 200, { mapsKey: config.maps.browserKey, mapId: config.maps.mapId });
+    }
+    if (pathname === '/api/geocode' && method === 'GET') {
+      const [lat, lon] = String(url.searchParams.get('near') || '').split(',').map(Number);
+      const near = Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
+      return json(res, 200, await maps.geocode(url.searchParams.get('address'), near));
+    }
+    if (pathname === '/api/route' && method === 'POST') {
+      let body; try { body = JSON.parse(await readBody(req)); } catch { throw new MapsError('JSON inválido.', 400); }
+      return json(res, 200, await maps.route(body.from, body.to));
+    }
+    if (pathname.startsWith('/api/')) return json(res, 404, { error: 'não encontrado' });
+
+    if (method !== 'GET' && method !== 'HEAD') { res.writeHead(405, { Allow: 'GET, HEAD' }); return res.end(); }
+    if (await serveStatic(req, res, PUBLIC, pathname)) return;
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Não encontrado');
+  }
+
+  return createServer(async (req, res) => {
+    try { await handle(req, res); }
+    catch (e) {
+      const status = e.status || 500;
+      if (status >= 500) console.error(e);
+      if (res.headersSent) return res.destroy();
+      json(res, status, { error: status >= 500 && !(e instanceof MapsError) ? 'erro interno' : e.message });
+    }
+  });
+}
+
+// Inicia o servidor quando executado diretamente (node server/index.js)
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  let config;
+  try { config = loadConfig(); } catch (e) { console.error(e.message); process.exit(1); }
+  if (!config.maps.browserKey || !config.maps.serverKey) console.warn('Aviso: chaves do Google Maps ausentes; o mapa e o cálculo de rotas não funcionarão.');
+  createApp(config).listen(config.port, config.host, () => console.log(`Calculadora de Fretes em http://${config.host}:${config.port}`));
+}
