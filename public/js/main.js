@@ -11,7 +11,7 @@ import { syncGeo, resetGeo, warmHome } from './geo.js';
 import { renderAcState } from './autocomplete.js';
 import { initMap, invalidateMap } from './map.js';
 import { loadRemote, initSaved, persist } from './store.js';
-import { initRecent } from './recent.js';
+import { initRecent, loadRecent, updateEditBanner } from './recent.js';
 
 // Dados do servidor (SQLite) têm prioridade sobre a cópia local do navegador
 const remote = await loadRemote();
@@ -31,14 +31,17 @@ function refresh(){
   renderValidation(app.last);
   renderResults(app.last);
   $('#quotePreview').innerHTML = quoteHTML();
+  updateEditBanner();
   persist(S, Q);
 }
 
 /* Navegação entre Orçamento e Configurações (rota pelo hash da URL) */
-const ROUTES = { '#/': 'calc', '#/configuracoes': 'set' };
+const ROUTES = { '#/': 'calc', '#/historico': 'hist', '#/configuracoes': 'set' };
 function showTab(name){
   $('#tab-calc').classList.toggle('hidden', name !== 'calc');
   $('#tab-set').classList.toggle('hidden', name !== 'set');
+  $('#tab-hist').classList.toggle('hidden', name !== 'hist');
+  if (name === 'hist') loadRecent();
   document.body.dataset.view = name;
   document.querySelectorAll('[data-route]').forEach(a => a.setAttribute('aria-selected', String(a.dataset.route === name)));
   if (name === 'calc') invalidateMap();

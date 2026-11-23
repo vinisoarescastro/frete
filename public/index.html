@@ -26,6 +26,7 @@
       <div class="brand"><span class="brand__logo"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#truck"/></svg></span><span class="brand__name">Fretes</span></div>
       <nav class="ds-tabs appbar__tabs" role="tablist" aria-label="Seções">
         <a class="ds-tab" role="tab" id="tab-btn-calc" href="#/" data-route="calc" aria-selected="true" aria-controls="tab-calc">Orçamento</a>
+        <a class="ds-tab" role="tab" id="tab-btn-hist" href="#/historico" data-route="hist" aria-selected="false" aria-controls="tab-hist">Histórico</a>
         <a class="ds-tab" role="tab" id="tab-btn-set" href="#/configuracoes" data-route="set" aria-selected="false" aria-controls="tab-set">Configurações</a>
       </nav>
       <div class="appbar__end">
@@ -44,6 +45,8 @@
     <h1 class="t-page-title">Orçamento</h1>
     <button class="ds-btn ds-btn--ghost ds-btn--sm" id="btnNew" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#rotate-ccw"/></svg>Limpar</button>
   </div>
+
+  <div class="ds-alert ds-alert--info edit-banner" id="editBanner" hidden role="status"><div class="ds-alert__body"><div class="ds-alert__text"><span id="editLabel"></span></div></div><button type="button" class="ds-btn ds-btn--primary ds-btn--sm" id="btnSaveEdit">Salvar alterações</button></div>
 
   <div class="grid grid--main app-layout">
 
@@ -159,14 +162,19 @@
   </div>
 
   <div class="stack">
-    <details class="ds-card" id="recent">
-      <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#receipt"/></svg></span><span class="sum-text"><span class="ds-card__title">Orçamentos recentes</span><span class="ds-card__desc">Reabra um orçamento já enviado.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
-      <div class="ds-card__body"><div class="recent-list" id="recentList"></div></div>
-    </details>
     <details class="ds-card">
       <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#file-text"/></svg></span><span class="sum-text"><span class="ds-card__title">Ver orçamento do cliente</span><span class="ds-card__desc">Não mostra custos, margem nem lucro.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
       <div class="ds-card__body"><div class="qwrap" id="quotePreview"></div></div>
     </details>
+  </div>
+</div>
+
+<!-- HISTÓRICO -->
+<div id="tab-hist" role="tabpanel" aria-labelledby="tab-btn-hist" class="stack stack--lg hidden">
+  <div class="page-header"><h1 class="t-page-title">Histórico</h1></div>
+  <div class="hist-wrap">
+    <div class="ds-field"><input class="ds-control" id="histSearch" type="search" placeholder="Buscar por cliente ou endereço" autocomplete="off" aria-label="Buscar orçamentos"></div>
+    <section class="ds-card"><div class="ds-card__body"><div class="recent-list" id="recentList"></div></div></section>
   </div>
 </div>
 
