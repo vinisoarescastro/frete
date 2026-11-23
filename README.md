@@ -50,6 +50,9 @@ Requer Node 22.9 ou superior.
   (cadastro gratuito, sem cartão, 3.000 créditos por dia). A chave fica só no servidor.
   Sem a chave, usa Nominatim + OSRM do OpenStreetMap, que são servidores públicos e podem falhar ou ficar lentos.
 
+- **Sugestões ao digitar:** vêm do Photon (OpenStreetMap, sem chave) ou do autocompletar do Geoapify, quando a chave está configurada.
+- **Clique no mapa:** marca o ponto que falta e descobre o endereço (geocodificação reversa).
+
 O site precisa ser aberto por `http://` ou `https://` (não por arquivo local), senão o OpenStreetMap bloqueia as imagens do mapa.
 
 ## Publicar na VPS

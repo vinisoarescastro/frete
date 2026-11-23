@@ -46,19 +46,19 @@ details.ds-card>.ds-card__body{padding:var(--space-5) var(--space-6)}
 
 /* Trajeto */
 .ds-fieldset legend{margin-bottom:var(--space-2)}
-.route-actions{display:flex;flex-wrap:wrap;gap:var(--space-2)}
 .status{display:grid;gap:var(--space-1);font-size:var(--text-sm);color:var(--text-muted)}
 .status:empty{display:none}
 .status .e{color:var(--danger-text)}.status .o{color:var(--success)}
 .note{font-size:var(--text-sm);color:var(--text-muted)}
-#map{height:22rem;border-radius:var(--radius-lg);border:1px solid var(--border);z-index:1}
+#map{height:18rem;border-radius:var(--radius-lg);border:1px solid var(--border);z-index:1}
 .legend{display:flex;flex-wrap:wrap;gap:var(--space-1) var(--space-4);margin-top:var(--space-2);font-size:var(--text-xs);color:var(--text-muted)}
 .legend i{display:inline-block;width:1.125rem;height:4px;border-radius:2px;margin-right:var(--space-2);vertical-align:middle}
 .pin{background:var(--primary);color:var(--on-primary);border:2px solid #fff;border-radius:50%;width:1.625rem;height:1.625rem;display:grid;place-items:center;font-weight:var(--weight-semibold);font-size:var(--text-xs);box-shadow:var(--shadow-md)}
-.drows{display:grid;gap:var(--space-3)}
-.drow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-3);align-items:end}
-.drow .dx{display:flex;gap:var(--space-2);align-items:center;min-height:var(--control-md);font-size:var(--text-sm);white-space:nowrap}
-@media (max-width:600px){.drow{grid-template-columns:1fr}.drow .dx{min-height:0}}
+
+.drows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3) var(--space-4)}
+.drow{display:flex;align-items:flex-end;gap:var(--space-2)}
+.drow .ds-field{flex:1}
+@media (max-width:600px){.drows{grid-template-columns:1fr}}
 
 /* Resumo */
 .ds-kpi.is-loss{background:linear-gradient(135deg,#ef4444 0%,#b91c1c 100%)}
@@ -124,3 +124,30 @@ footer.foot{color:var(--text-subtle);font-size:var(--text-xs);text-align:center}
   #printArea .qdoc{box-shadow:none;padding:0;max-width:none}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* Endereços com sugestões */
+.ac-field .ds-control{padding-right:var(--space-8)}
+.ac-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:var(--z-dropdown);list-style:none;margin:0;padding:var(--space-1);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-md);max-height:20rem;overflow-y:auto}
+.ac-item{display:flex;flex-direction:column;padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);cursor:pointer}
+.ac-item:hover,.ac-item[aria-selected="true"]{background:var(--primary-soft)}
+.ac-main{font-size:var(--text-base);font-weight:var(--weight-medium)}
+.ac-sub{font-size:var(--text-xs);color:var(--text-muted)}
+.ac-state.is-ok{color:var(--success)}
+.ac-state.is-warn{color:var(--warning)}
+.ac-note{color:var(--warning)}
+.stack--sm{display:flex;flex-direction:column;gap:var(--space-3)}
+
+/* Mapa */
+.map-wrap{display:flex;flex-direction:column;gap:var(--space-2)}
+.map-hint{font-size:var(--text-xs);color:var(--text-subtle)}
+.map-wrap .legend{margin-top:0}
+.pin--home{background:var(--text-muted)}
+
+/* Modalidade (controle segmentado do design system, com radios) */
+fieldset.modes{border:0;margin:0;padding:0;min-width:0}
+fieldset.modes legend{padding:0;margin-bottom:var(--space-2)}
+.seg .ds-segmented__item{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg .ds-segmented__item:hover{color:var(--text)}
+.seg .ds-segmented__item:has(input:checked){background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.seg .ds-segmented__item:has(input:focus-visible){box-shadow:var(--focus-ring)}

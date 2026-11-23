@@ -51,6 +51,10 @@ const loginPage = (res, status, msg = '') => {
   res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(html);
 };
+const parseNear = url => {
+  const [lat, lon] = String(url.searchParams.get('near') || '').split(',').map(Number);
+  return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
+};
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export function createApp(config, { maps = createMaps(config.maps) } = {}){
@@ -103,9 +107,17 @@ export function createApp(config, { maps = createMaps(config.maps) } = {}){
     }
 
     if (pathname === '/api/geocode' && method === 'GET') {
-      const [lat, lon] = String(url.searchParams.get('near') || '').split(',').map(Number);
-      const near = Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
-      return json(res, 200, await maps.geocode(url.searchParams.get('address'), near));
+      return json(res, 200, await maps.geocode(url.searchParams.get('address'), parseNear(url)));
+    }
+    if (pathname === '/api/suggest' && method === 'GET') {
+      const q = String(url.searchParams.get('q') || '').trim().slice(0, 200);
+      if (q.length < 3) return json(res, 200, { items: [] });
+      return json(res, 200, await maps.suggest(q, parseNear(url)));
+    }
+    if (pathname === '/api/reverse' && method === 'GET') {
+      const lat = Number(url.searchParams.get('lat')), lon = Number(url.searchParams.get('lon'));
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new MapsError('Coordenadas inválidas.', 400);
+      return json(res, 200, await maps.reverse(lat, lon));
     }
     if (pathname === '/api/route' && method === 'POST') {
       let body; try { body = JSON.parse(await readBody(req)); } catch { throw new MapsError('JSON inválido.', 400); }

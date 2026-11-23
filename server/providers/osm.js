@@ -49,6 +49,34 @@ export function createOsm({ contact = '' } = {}, fetchImpl = fetch){
     return { found: true, lat: +best.lat, lon: +best.lon, name: best.display_name, approx: false };
   }
 
+  // Texto de exibição de um resultado do Photon: "Rua X, 43, Bairro, Cidade, Estado"
+  function photonLabel(p){
+    const road = [p.street || p.name, p.housenumber].filter(Boolean).join(', ');
+    const parts = [p.type === 'street' || p.housenumber ? road : (p.name || road)];
+    if (p.name && p.street && p.type !== 'street' && !p.housenumber && p.name !== p.street) parts.push(p.street);
+    parts.push(p.district, p.city, p.state);
+    return parts.filter((x, i, a) => x && a.indexOf(x) === i).join(', ');
+  }
+  const photonItem = f => ({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], name: photonLabel(f.properties), precise: f.properties.type === 'house' });
+
+  // Sugestões enquanto o usuário digita (o Photon foi feito para isso; o Nominatim proíbe autocompletar)
+  async function suggest(query, near){
+    const qs = new URLSearchParams({ q: query, limit: '6' });
+    if (near && isCoord(near.lat, near.lon)) { qs.set('lat', String(near.lat)); qs.set('lon', String(near.lon)); }
+    const res = await get(`${PHOTON}?${qs}`, { headers });
+    if (!res.ok) throw new MapsError('Photon HTTP ' + res.status);
+    const j = await res.json();
+    return { items: (j.features || []).filter(f => f.properties?.countrycode === 'BR').map(photonItem).slice(0, 5) };
+  }
+
+  async function reverse(lat, lon){
+    const res = await get(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}&limit=1`, { headers });
+    if (!res.ok) throw new MapsError('Photon HTTP ' + res.status);
+    const j = await res.json();
+    const f = j.features && j.features[0];
+    return { found: !!f, name: f ? photonLabel(f.properties) : '' };
+  }
+
   async function viaPhoton(address, near){
     const qs = new URLSearchParams({ q: address, limit: '5' });
     if (near) { qs.set('lat', String(near.lat)); qs.set('lon', String(near.lon)); }
@@ -84,5 +112,5 @@ export function createOsm({ contact = '' } = {}, fetchImpl = fetch){
     return { meters: r.distance, coords: r.geometry.coordinates.map(([lon, lat]) => [lat, lon]) };
   }
 
-  return { geocode, route };
+  return { geocode, route, suggest, reverse };
 }

@@ -59,10 +59,9 @@
   <div class="page-header">
     <div class="page-header__text">
       <h1 class="t-page-title">Novo orçamento</h1>
-      <p class="t-subtitle">Preencha o trajeto e o valor aparece ao lado.</p>
     </div>
     <div class="page-header__actions">
-      <button class="ds-btn ds-btn--outline" id="btnNew" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#rotate-ccw"/></svg>Limpar orçamento</button>
+      <button class="ds-btn ds-btn--ghost ds-btn--sm" id="btnNew" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#rotate-ccw"/></svg>Limpar</button>
     </div>
   </div>
 
@@ -70,8 +69,72 @@
 
     <!-- Entradas -->
     <div class="flow">
+      <section class="ds-card" aria-labelledby="h-trajeto">
+        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#route"/></svg></span><h2 class="ds-card__title" id="h-trajeto">Trajeto</h2></div></div>
+        <div class="ds-card__body">
+          <div class="stack stack--sm">
+            <div class="ds-field ac-field" data-acwrap="pickup">
+              <label class="ds-label" for="ac-pickup">Coleta</label>
+              <div class="ds-input-wrap">
+                <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#map-pin"/></svg>
+                <input class="ds-control ds-control--icon" id="ac-pickup" data-q="pickup" data-ac="pickup" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ac-pickup-list" autocomplete="off" placeholder="Digite o endereço de coleta">
+                <svg class="icon ds-input-wrap__end ac-state" aria-hidden="true" hidden><use href="/assets/icons.svg#circle-check"/></svg>
+              <ul class="ac-list" id="ac-pickup-list" role="listbox" aria-label="Coleta: sugestões" hidden></ul>
+              </div>
+              <p class="ds-help ac-note" hidden></p>
+            </div>
+            <div class="ds-field ac-field" data-acwrap="delivery">
+              <label class="ds-label" for="ac-delivery">Entrega</label>
+              <div class="ds-input-wrap">
+                <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#map-pin"/></svg>
+                <input class="ds-control ds-control--icon" id="ac-delivery" data-q="delivery" data-ac="delivery" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ac-delivery-list" autocomplete="off" placeholder="Digite o endereço de entrega">
+                <svg class="icon ds-input-wrap__end ac-state" aria-hidden="true" hidden><use href="/assets/icons.svg#circle-check"/></svg>
+              <ul class="ac-list" id="ac-delivery-list" role="listbox" aria-label="Entrega: sugestões" hidden></ul>
+              </div>
+              <p class="ds-help ac-note" hidden></p>
+            </div>
+          </div>
+
+          <div class="map-wrap">
+            <div id="map" role="application" aria-label="Mapa do trajeto"></div>
+            <p class="map-hint" id="mapHint"></p>
+            <div class="legend" id="mapLegend"></div>
+          </div>
+          <div class="status" id="geoStatus" aria-live="polite"></div>
+
+          <fieldset class="modes">
+            <legend class="ds-label">Modalidade</legend>
+            <div class="ds-segmented ds-segmented--full seg">
+              <label class="ds-segmented__item"><input type="radio" name="mode" data-q="mode" value="oneway">Somente ida</label>
+              <label class="ds-segmented__item"><input type="radio" name="mode" data-q="mode" value="roundtrip">Ida e volta</label>
+              <label class="ds-segmented__item"><input type="radio" name="mode" data-q="mode" value="multiple">Várias viagens</label>
+            </div>
+          </fieldset>
+          <div class="form-grid">
+            <div id="tripsBox" class="hidden"></div>
+            <div id="finalBox"></div>
+            <div id="finalAddrBox" class="span2 hidden"><div class="ds-field ac-field" data-acwrap="final">
+              <label class="ds-label" for="ac-final">Destino final</label>
+              <div class="ds-input-wrap">
+                <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#map-pin"/></svg>
+                <input class="ds-control ds-control--icon" id="ac-final" data-q="finalAddr" data-ac="final" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ac-final-list" autocomplete="off" placeholder="Digite o endereço de destino final">
+                <svg class="icon ds-input-wrap__end ac-state" aria-hidden="true" hidden><use href="/assets/icons.svg#circle-check"/></svg>
+              <ul class="ac-list" id="ac-final-list" role="listbox" aria-label="Destino final: sugestões" hidden></ul>
+              </div>
+              <p class="ds-help ac-note" hidden></p>
+            </div></div>
+          </div>
+
+          <div id="distBox" hidden>
+            <h3 class="sub-title">Distâncias</h3>
+            <div class="drows" id="dRows"></div>
+          </div>
+          <div><button class="ds-btn ds-btn--ghost ds-btn--sm" id="btnDistManual" type="button">Preencher distâncias manualmente</button></div>
+        </div>
+      </section>
+
       <section class="ds-card" aria-labelledby="h-cliente">
-        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#user"/></svg></span><div><h2 class="ds-card__title" id="h-cliente">Cliente e serviço</h2><p class="ds-card__desc">Dados que aparecem no orçamento.</p></div></div></div>
+        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#user"/></svg></span><h2 class="ds-card__title" id="h-cliente">Cliente</h2><span class="ds-badge ds-badge--sm">Opcional</span></div></div>
         <div class="ds-card__body">
           <div class="form-grid" id="secDados"></div>
           <details class="collapse">
@@ -81,41 +144,8 @@
         </div>
       </section>
 
-      <section class="ds-card" aria-labelledby="h-trajeto">
-        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#route"/></svg></span><div><h2 class="ds-card__title" id="h-trajeto">Trajeto</h2><p class="ds-card__desc">Endereços, modalidade e distâncias.</p></div></div></div>
-        <div class="ds-card__body">
-          <div class="form-grid" id="secEnd"></div>
-
-          <fieldset class="ds-fieldset modes">
-            <legend>Modalidade</legend>
-            <div class="ds-option-grid">
-              <label class="ds-option"><input class="ds-option__input" type="radio" name="mode" data-q="mode" value="oneway"><span class="ds-option__text"><span class="ds-option__title">Somente ida</span><span class="ds-option__desc">Coleta, entrega e fim</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>
-              <label class="ds-option"><input class="ds-option__input" type="radio" name="mode" data-q="mode" value="roundtrip"><span class="ds-option__text"><span class="ds-option__title">Ida e volta</span><span class="ds-option__desc">Entrega e volta à coleta</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>
-              <label class="ds-option"><input class="ds-option__input" type="radio" name="mode" data-q="mode" value="multiple"><span class="ds-option__text"><span class="ds-option__title">Várias viagens</span><span class="ds-option__desc">Mais de uma ida</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>
-            </div>
-          </fieldset>
-          <div class="form-grid">
-            <div id="tripsBox" class="hidden"></div>
-            <div id="finalBox"></div>
-            <div id="finalAddrBox" class="span2 hidden"></div>
-          </div>
-
-          <div class="route-actions">
-            <button class="ds-btn ds-btn--primary" id="btnGeo" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#map-pin"/></svg>Localizar no mapa</button>
-            <button class="ds-btn ds-btn--outline" id="btnConfirm" type="button" hidden>Confirmar pontos e calcular</button>
-          </div>
-          <div class="status" id="geoStatus" aria-live="polite"></div>
-          <p class="note" id="geoNote">Localize os endereços, confira os pontos no mapa e confirme para calcular as distâncias. Os endereços são enviados ao serviço de mapas. Você também pode digitar as distâncias manualmente.</p>
-
-          <div id="mapBox" class="hidden"><div id="map" role="application" aria-label="Mapa do trajeto"></div><div class="legend" id="mapLegend"></div></div>
-
-          <h3 class="sub-title">Distâncias</h3>
-          <div class="drows" id="dRows"></div>
-        </div>
-      </section>
-
       <details class="ds-card">
-        <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#wallet"/></svg></span><span class="sum-text"><span class="ds-card__title">Despesas e horas</span><span class="ds-card__desc">Opcional. Valem só para este orçamento.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
+        <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#wallet"/></svg></span><span class="sum-text"><span class="ds-card__title">Despesas e horas</span><span class="ds-card__desc">Pedágio, estacionamento, ajudante e mão de obra.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
         <div class="ds-card__body">
           <div class="form-grid" id="secDesp"></div>
           <div><button class="ds-btn ds-btn--outline ds-btn--sm" id="btnDefaults" type="button">Usar valores padrão</button></div>
@@ -128,33 +158,25 @@
       <div id="alerts" class="alerts"></div>
       <div id="hero" aria-live="polite"></div>
 
-      <section class="ds-card">
-        <div class="ds-card__body">
-          <div class="actions-grid">
-            <button class="ds-btn ds-btn--primary full" id="btnCopy" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#message-circle"/></svg>Copiar para WhatsApp</button>
-            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnCopyPlain" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#copy"/></svg>Texto simples</button>
-            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnImg" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#image"/></svg>Imagem</button>
-            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnPdf" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#file-down"/></svg>PDF</button>
-            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnPrint" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#printer"/></svg>Imprimir</button>
-          </div>
-        </div>
-      </section>
+      <div class="actions-grid">
+        <button class="ds-btn ds-btn--primary full" id="btnCopy" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#message-circle"/></svg>Copiar para WhatsApp</button>
+        <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnCopyPlain" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#copy"/></svg>Texto</button>
+        <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnImg" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#image"/></svg>Imagem</button>
+        <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnPdf" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#file-down"/></svg>PDF</button>
+        <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnPrint" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#printer"/></svg>Imprimir</button>
+      </div>
 
-      <section class="ds-card" aria-labelledby="h-preco">
-        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#sliders-horizontal"/></svg></span><h2 class="ds-card__title" id="h-preco">Ajustar preço</h2></div></div>
+      <details class="ds-card">
+        <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#sliders-horizontal"/></svg></span><span class="sum-text"><span class="ds-card__title">Desconto e ajustes</span><span class="ds-card__desc">Desconto, preço manual, método e margem.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
         <div class="ds-card__body">
           <div class="form-grid" id="secPreco"></div>
           <div><button class="ds-btn ds-btn--ghost ds-btn--sm" id="btnClearManual" type="button">Limpar preço manual</button></div>
-          <details class="collapse">
-            <summary>Método, margem e valor mínimo</summary>
-            <div class="collapse__body">
-              <div class="methods" id="mcards"></div>
-              <p class="note">Os dois usam os mesmos custos reais. O Método 1 cobra por km rodado; o Método 2 usa o custo mais a margem desejada.</p>
-              <div class="form-grid" id="secPrecoMais"></div>
-            </div>
-          </details>
+          <h3 class="sub-title">Método de cálculo</h3>
+          <div class="methods" id="mcards"></div>
+          <p class="note">Os dois usam os mesmos custos reais. O Método 1 cobra por km rodado; o Método 2 usa o custo mais a margem desejada.</p>
+          <div class="form-grid" id="secPrecoMais"></div>
         </div>
-      </section>
+      </details>
 
       <details class="ds-card">
         <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#receipt"/></svg></span><span class="sum-text"><span class="ds-card__title">Detalhes do cálculo</span><span class="ds-card__desc">Quilometragem, custos e lucro.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
@@ -166,10 +188,10 @@
     </aside>
   </div>
 
-  <section class="ds-card" aria-labelledby="h-prev">
-    <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#file-text"/></svg></span><div><h2 class="ds-card__title" id="h-prev">Orçamento para o cliente</h2><p class="ds-card__desc">Não mostra custos, margem nem lucro.</p></div></div></div>
+  <details class="ds-card">
+    <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#file-text"/></svg></span><span class="sum-text"><span class="ds-card__title">Orçamento para o cliente</span><span class="ds-card__desc">Pré-visualização. Não mostra custos, margem nem lucro.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
     <div class="ds-card__body"><div class="qwrap" id="quotePreview"></div></div>
-  </section>
+  </details>
 </div>
 
 <!-- CONFIGURAÇÕES -->

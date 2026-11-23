@@ -23,6 +23,19 @@ export function createGeoapify({ key }, fetchImpl = fetch){
     return { found: true, lat: r.lat, lon: r.lon, name: r.formatted, approx: /\d/.test(address) && !exact };
   }
 
+  async function suggest(query, near){
+    const params = { text: query, format: 'json', lang: 'pt', limit: '5', filter: 'countrycode:br' };
+    if (near && isCoord(near.lat, near.lon)) params.bias = `proximity:${near.lon},${near.lat}`;
+    const j = await get('/geocode/autocomplete', params);
+    return { items: (j.results || []).map(r => ({ lat: r.lat, lon: r.lon, name: r.formatted, precise: ['building', 'amenity'].includes(r.result_type) })) };
+  }
+
+  async function reverse(lat, lon){
+    const j = await get('/geocode/reverse', { lat: String(lat), lon: String(lon), format: 'json', lang: 'pt' });
+    const r = j.results && j.results[0];
+    return { found: !!r, name: r ? r.formatted : '' };
+  }
+
   async function route(from, to){
     checkPoints(from, to);
     const j = await get('/routing', { waypoints: `${from.lat},${from.lon}|${to.lat},${to.lon}`, mode: 'drive', units: 'metric' });
@@ -32,5 +45,5 @@ export function createGeoapify({ key }, fetchImpl = fetch){
     return { meters: f.properties.distance, coords: lines.flat().map(([lon, lat]) => [lat, lon]) };
   }
 
-  return { geocode, route };
+  return { geocode, route, suggest, reverse };
 }

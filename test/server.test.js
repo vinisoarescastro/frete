@@ -6,7 +6,9 @@ import { createMaps } from '../server/maps.js';
 const config = { password: 'segredo', port: 0, host: '127.0.0.1', trustProxy: false, sessionDays: 1, maps: {} };
 const fakeMaps = {
   geocode: async a => ({ found: true, lat: -16.7, lon: -49.2, name: a, approx: false }),
-  route: async () => ({ meters: 12345, coords: [[1, 1], [2, 2]] })
+  route: async () => ({ meters: 12345, coords: [[1, 1], [2, 2]] }),
+  suggest: async q => ({ items: [{ lat: -16.7, lon: -49.2, name: 'Sugestão para ' + q, precise: true }] }),
+  reverse: async () => ({ found: true, name: 'Rua do Mapa, Goiânia' })
 };
 
 test('maps: Nominatim escolhe o resultado mais próximo e OSRM devolve metros', async () => {
@@ -65,6 +67,11 @@ test('senha errada é recusada; certa libera o acesso, com cookie HttpOnly', asy
     assert.equal(g.found, true);
     const r = await fetch(s.base + '/api/route', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: { lat: 1, lon: 1 }, to: { lat: 2, lon: 2 } }) });
     assert.equal((await r.json()).meters, 12345);
+    const sg = await (await fetch(s.base + '/api/suggest?q=rua%20nove', { headers: h })).json();
+    assert.equal(sg.items.length, 1);
+    assert.deepEqual((await (await fetch(s.base + '/api/suggest?q=ab', { headers: h })).json()).items, []);   // curto demais
+    assert.equal((await (await fetch(s.base + '/api/reverse?lat=-16.7&lon=-49.2', { headers: h })).json()).name, 'Rua do Mapa, Goiânia');
+    assert.equal((await fetch(s.base + '/api/reverse?lat=x&lon=1', { headers: h })).status, 400);
     // logout invalida a sessão
     await fetch(s.base + '/logout', { method: 'POST', headers: h, redirect: 'manual' });
     assert.equal((await fetch(s.base + '/api/geocode?address=x', { headers: h })).status, 401);
@@ -124,4 +131,23 @@ test('maps: se o Nominatim falhar, usa o Photon como reserva; sem nenhum, devolv
   assert.equal(nominatimCalls, 1);   // depois da falha, não tenta o Nominatim de novo por alguns minutos
   const down = createMaps({}, async () => { throw new Error('rede'); });
   await assert.rejects(() => down.geocode('Rua X'), /indisponível/);
+});
+
+test('maps: sugestões (Photon) só do Brasil, com cache, e reverse', async () => {
+  let calls = 0;
+  const fake = async url => {
+    calls++;
+    if (String(url).includes('/reverse')) return { ok: true, json: async () => ({ features: [{ properties: { name: 'Rua A', type: 'street', city: 'Goiânia' }, geometry: { coordinates: [-49.2, -16.7] } }] }) };
+    return { ok: true, json: async () => ({ features: [
+      { properties: { countrycode: 'AR', name: 'fora' }, geometry: { coordinates: [0, 0] } },
+      { properties: { countrycode: 'BR', street: 'Rua Nove', housenumber: '12', district: 'Setor Central', city: 'Goiânia', state: 'Goiás', type: 'house' }, geometry: { coordinates: [-49.25, -16.68] } }] }) };
+  };
+  const m = createMaps({}, fake);
+  const a = await m.suggest('rua nove', { lat: -16.7, lon: -49.2 });
+  assert.equal(a.items.length, 1);
+  assert.equal(a.items[0].name, 'Rua Nove, 12, Setor Central, Goiânia, Goiás');
+  assert.equal(a.items[0].precise, true);
+  await m.suggest('rua nove', { lat: -16.7, lon: -49.2 });
+  assert.equal(calls, 1);   // segunda chamada veio do cache
+  assert.equal((await m.reverse(-16.7, -49.2)).name, 'Rua A, Goiânia');
 });

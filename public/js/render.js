@@ -18,18 +18,14 @@ export function renderValidation(res){
     if (m) { m.textContent = map[key] || ''; m.hidden = !map[key]; }
   });
 
-  const missing = [];
-  if (!Q.pickup.trim()) missing.push('endereço de coleta');
-  if (!Q.delivery.trim()) missing.push('endereço de entrega');
   const useEta = (Q.fuel || S.fuelType) === 'etanol';
   const needSetup = useEta ? (num(S.etaPrice) <= 0 || num(S.etaKmPerL) <= 0) : (num(S.gasPrice) <= 0 || num(S.kmPerL) <= 0);
 
   let html = '';
-  if (res.errors.length) html += alertBox('danger', 'Corrija para calcular', `<ul>${res.errors.map(e => `<li>${esc(e.msg)}</li>`).join('')}</ul>`);
+  const shown = res.errors.filter(e => e.key);   // o aviso genérico de "informe as quilometragens" fica por conta do resumo
+  if (shown.length) html += alertBox('danger', 'Corrija para calcular', `<ul>${shown.map(e => `<li>${esc(e.msg)}</li>`).join('')}</ul>`);
   if (needSetup) html += alertBox('warning', '', 'Complete o preço e o consumo médio do combustível em <a href="#/configuracoes">Configurações</a> para um cálculo de combustível correto.');
   const w = res.warnings.slice();
-  if (missing.length) w.push('Faltam informações para o orçamento: ' + missing.join(' e ') + '.');
-  if ($('#geoNote').dataset.stale) w.push('Os endereços mudaram desde o último cálculo automático. Recalcule ou revise as distâncias.');
   if (w.length) html += alertBox('warning', '', `<ul>${w.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`);
   $('#alerts').innerHTML = html;
 }
@@ -43,7 +39,7 @@ const METHOD_NAME = { '1': 'Método 1: preço por km', '2': 'Método 2: custos e
 export function renderResults(res){
   const r = res.r;
   if (!r) {
-    $('#hero').innerHTML = `<div class="ds-card ds-card--gradient ds-kpi"><div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div><div class="ds-kpi__main"><span class="t-value">R$ 0,00</span></div><div class="kpi-notes">Informe o trajeto e as distâncias para calcular.</div></div>`;
+    $('#hero').innerHTML = `<div class="ds-card ds-card--gradient ds-kpi"><div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div><div class="ds-kpi__main"><span class="t-value">R$ 0,00</span></div><div class="kpi-notes">Informe a coleta e a entrega para calcular.</div></div>`;
     $('#barPrice').textContent = 'Aguardando dados';
     ['#mcards', '#kmTable', '#costTable'].forEach(s => $(s).innerHTML = '<p class="note">Aguardando dados válidos.</p>');
     return;

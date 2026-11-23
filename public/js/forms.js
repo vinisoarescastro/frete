@@ -31,14 +31,8 @@ export function buildForms(){
     field('q', 'desc', 'Descrição da carga ou serviço', { type: 'textarea', cls: 'span2' }),
     field('q', 'notes', 'Observações para o cliente', { type: 'textarea', cls: 'span2' })
   ].join('');
-  $('#secEnd').innerHTML = [
-    field('q', 'pickup', 'Endereço de coleta', { type: 'text', cls: 'span2', ph: 'Rua, número, bairro, cidade' }),
-    field('q', 'delivery', 'Endereço de entrega', { type: 'text', cls: 'span2', ph: 'Rua, número, bairro, cidade' })
-  ].join('');
-
   $('#tripsBox').innerHTML = field('q', 'trips', 'Viagens de ida', { suf: 'viagens', hint: 'Entre as viagens o veículo volta à coleta.' });
   $('#finalBox').innerHTML = field('q', 'finalDest', 'Depois da entrega, voltar para', { type: 'select', options: [['home', 'Minha residência'], ['other', 'Outro endereço']] });
-  $('#finalAddrBox').innerHTML = field('q', 'finalAddr', 'Endereço de destino final', { type: 'text' });
 
   const rows = [
     ['homePickup', 'Residência até a coleta', 'always'],
@@ -47,8 +41,10 @@ export function buildForms(){
     ['deliveryFinal', 'Entrega até o destino final', 'oneway,multiple'],
     ['pickupFinal', 'Coleta até o destino final', 'roundtrip']
   ];
-  $('#dRows').innerHTML = rows.map(([k, l, m]) =>
-    `<div class="drow" data-key="${k}" data-modes="${m}">${field('q', k, `<span data-lbl>${l}</span>`, { ...KM, ph: '0' })}<div class="dx"><span class="ds-badge ds-badge--sm" data-tag></span><button class="ds-btn ds-btn--ghost ds-btn--sm hidden" type="button" data-reset title="Voltar a copiar o trecho inverso">Restaurar</button><a class="hidden" target="_blank" rel="noopener" data-map>Ver no Maps</a></div></div>`).join('');
+  $('#dRows').innerHTML = rows.map(([k, l, m]) => `<div class="drow" data-key="${k}" data-modes="${m}">
+    <label class="ds-field"><span class="ds-label"><span data-lbl>${l}</span> <span class="ds-badge ds-badge--sm hidden" data-tag></span></span>
+      <div class="ds-group"><input class="ds-control" data-q="${k}" type="number" step="any" inputmode="decimal" placeholder="0" autocomplete="off"><span class="ds-group__addon ds-group__addon--end">km</span></div><p class="ds-error msg" hidden></p></label>
+    <button class="ds-btn ds-btn--ghost ds-btn--sm hidden" type="button" data-reset title="Voltar a copiar o trecho inverso">Restaurar</button></div>`).join('');
 
   $('#secDesp').innerHTML = [
     field('q', 'tolls', 'Pedágios', R$), field('q', 'parking', 'Estacionamento', R$),
@@ -131,19 +127,19 @@ export function syncInputs(){
   });
 }
 
-function mapsLink(a, b){
-  return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${encodeURIComponent(a)}&destination=${encodeURIComponent(b)}`;
-}
 export const finalAddress = () => Q.finalDest === 'home' ? S.home : Q.finalAddr;
+const DIST_KEYS = ['homePickup', 'pickupDelivery', 'deliveryPickup', 'deliveryFinal', 'pickupFinal'];
 
 export function renderRoute(){
-  const mode = Q.mode, home = S.home, fin = finalAddress();
+  const mode = Q.mode;
   $('#tripsBox').classList.toggle('hidden', mode !== 'multiple');
   $('#finalAddrBox').classList.toggle('hidden', Q.finalDest !== 'other');
-  const pairs = {
-    homePickup: [home, Q.pickup], pickupDelivery: [Q.pickup, Q.delivery], deliveryPickup: [Q.delivery, Q.pickup],
-    deliveryFinal: [Q.delivery, fin], pickupFinal: [Q.pickup, fin]
-  };
+
+  // Distâncias aparecem quando há coleta e entrega marcadas, quando já há valores, ou se o usuário pedir
+  const show = !!(Q.pts.pickup && Q.pts.delivery) || Q.distManual || DIST_KEYS.some(k => String(Q[k] ?? '').trim() !== '');
+  $('#distBox').hidden = !show;
+  $('#btnDistManual').hidden = show;
+
   const finLabel = Q.finalDest === 'home' ? 'residência' : 'outro endereço';
   document.querySelectorAll('.drow').forEach(row => {
     const k = row.dataset.key, modes = row.dataset.modes;
@@ -152,14 +148,10 @@ export function renderRoute(){
     if (k === 'pickupFinal') row.querySelector('[data-lbl]').textContent = `Coleta até o destino final (${finLabel})`;
     const mirrored = MIRROR_KEYS.includes(k) && !Q.touched[k] && (k === 'deliveryPickup' || Q.finalDest === 'home');
     const tag = row.querySelector('[data-tag]');
-    tag.textContent = mirrored ? 'igual ao trecho inverso' : (Q.touched[k] ? 'manual' : '');
+    const manual = MIRROR_KEYS.includes(k) && Q.touched[k] === true;
+    tag.textContent = mirrored ? 'igual ao trecho inverso' : (manual ? 'manual' : '');
     tag.classList.toggle('ds-badge--success', mirrored);
     tag.classList.toggle('hidden', !tag.textContent);
-    row.querySelector('[data-reset]').classList.toggle('hidden', !(MIRROR_KEYS.includes(k) && Q.touched[k]));
-    const [a, b] = pairs[k], link = row.querySelector('[data-map]');
-    link.classList.toggle('hidden', !(a && b));
-    if (a && b) link.href = mapsLink(a, b);
+    row.querySelector('[data-reset]').classList.toggle('hidden', !manual);
   });
-  const stale = Q.geoKey && Q.geoKey !== [S.home, Q.pickup, Q.delivery, fin].join('|');
-  $('#geoNote').dataset.stale = stale ? '1' : '';
 }

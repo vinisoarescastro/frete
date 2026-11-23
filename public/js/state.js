@@ -13,7 +13,7 @@ export function newQuote(){
     date: today(), notes: '',
     mode: 'oneway', trips: '2', finalDest: 'home', finalAddr: '',
     homePickup: '', pickupDelivery: '', deliveryPickup: '', deliveryFinal: '', pickupFinal: '',
-    touched: {}, geoKey: '',
+    touched: {}, pts: {}, distManual: false,
     tolls: S.defTolls, parking: S.defParking, food: S.defFood, otherExp: S.defOther, hours: '',
     fuel: '', method: '2', discType: 'pct', discount: '', manual: ''
   };
@@ -21,6 +21,7 @@ export function newQuote(){
 
 export const Q = Object.assign(newQuote(), lsGet(KEY_Q, {}));
 Q.touched = Q.touched || {};
+Q.pts = Q.pts || {};
 
 /** Descarta o orçamento atual mantendo a mesma referência do objeto Q. */
 export function resetQuote(){
@@ -29,7 +30,8 @@ export function resetQuote(){
 }
 
 /** Estado compartilhado entre módulos: resultado do último cálculo e pontos geocodificados. */
-export const app = { last: null, geo: null };
+/** geo.home: ponto da residência; geo.routes: trechos calculados (km e traçado). Os pontos de coleta, entrega e destino ficam em Q.pts. */
+export const app = { last: null, geo: { home: null, routes: {} } };
 
 // Evita dependência circular: o ciclo de atualização é registrado por main.js
 let updater = () => {};

@@ -7,17 +7,17 @@ import { calculate } from './calc.js';
 import { buildForms, applyMirrors, syncInputs, renderRoute } from './forms.js';
 import { renderValidation, renderResults } from './render.js';
 import { quoteHTML, copyQuote, saveImage, printQuote } from './quote.js';
-import { locateAddresses, confirmRoutes, onPinMoved } from './geo.js';
-import { drawMap, mapStale } from './map.js';
+import { syncGeo, resetGeo, warmHome } from './geo.js';
+import { renderAcState } from './autocomplete.js';
+import { initMap, invalidateMap } from './map.js';
 
 function refresh(){
   applyMirrors();
   syncInputs();
   app.last = calculate(S, Q);
   renderRoute();
-  $('#btnConfirm').hidden = !app.geo;
-  $('#btnConfirm').textContent = app.geo && app.geo.confirmed ? 'Recalcular distâncias' : 'Confirmar pontos e calcular';
-  if (mapStale()) drawMap(false, onPinMoved);
+  syncGeo();
+  renderAcState();
   renderValidation(app.last);
   renderResults(app.last);
   $('#quotePreview').innerHTML = quoteHTML();
@@ -35,6 +35,7 @@ function showTab(name){
     if (a.dataset.route === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   setMenu(false);
+  if (name === 'calc') invalidateMap();
   window.scrollTo(0, 0);
 }
 const route = () => showTab(ROUTES[location.hash] || 'calc');
@@ -57,8 +58,7 @@ document.addEventListener('change', e => {
   const mc = e.target.closest && e.target.closest('[data-method]');
   if (mc && mc.checked) { Q.method = mc.dataset.method; update(); }
 });
-$('#btnGeo').addEventListener('click', locateAddresses);
-$('#btnConfirm').addEventListener('click', confirmRoutes);
+$('#btnDistManual').addEventListener('click', () => { Q.distManual = true; update(); $('[data-q="homePickup"]').focus(); });
 $('#btnCopy').addEventListener('click', () => copyQuote(true));
 $('#barCopy').addEventListener('click', () => copyQuote(true));
 $('#btnCopyPlain').addEventListener('click', () => copyQuote(false));
@@ -71,7 +71,7 @@ $('#btnDefaults').addEventListener('click', () => {
 });
 $('#btnNew').addEventListener('click', () => {
   if (!confirm('Começar um novo orçamento? Os dados do orçamento atual serão limpos (as configurações são mantidas).')) return;
-  resetQuote(); app.geo = null; $('#geoStatus').innerHTML = ''; $('#mapBox').classList.add('hidden'); update(); toast('Novo orçamento iniciado.');
+  resetQuote(); resetGeo(); update(); toast('Novo orçamento iniciado.');
 });
 $('#btnReset').addEventListener('click', () => {
   if (!confirm('Restaurar todas as configurações para os valores padrão?')) return;
@@ -83,5 +83,7 @@ window.addEventListener('afterprint', () => { $('#printArea').innerHTML = ''; })
 /* Início */
 setUpdater(refresh);
 buildForms();
+initMap();
 route();
 update();
+warmHome();
