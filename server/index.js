@@ -11,17 +11,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = join(ROOT, 'public');
 const LOGIN_HTML = readFileSync(join(ROOT, 'views', 'login.html'), 'utf8');
 
-// Política de segurança do conteúdo: o app só carrega recursos próprios e do Google Maps
-const G = '*.googleapis.com *.gstatic.com *.google.com';
+// Política de segurança do conteúdo: o app só carrega recursos próprios e as imagens do mapa do OpenStreetMap
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' ${G} *.ggpht.com *.googleusercontent.com blob:`,
-  `style-src 'self' 'unsafe-inline' ${G}`,
-  `img-src 'self' data: blob: ${G} *.ggpht.com *.googleusercontent.com`,
-  `connect-src 'self' ${G} data: blob:`,
-  `font-src 'self' *.gstatic.com data:`,
-  "worker-src blob:",
-  "frame-src *.google.com",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://tile.openstreetmap.org",
+  "connect-src 'self'",
   "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'"
 ].join('; ');
 
@@ -29,7 +25,7 @@ function securityHeaders(res, secure){
   res.setHeader('Content-Security-Policy', CSP);
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');   // o OSM exige Referer nas imagens do mapa
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   if (secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
 }
@@ -99,9 +95,6 @@ export function createApp(config, { maps = createMaps(config.maps) } = {}){
       return redirect(res, '/login');
     }
 
-    if (pathname === '/api/config' && method === 'GET') {
-      return json(res, 200, { mapsKey: config.maps.browserKey, mapId: config.maps.mapId });
-    }
     if (pathname === '/api/geocode' && method === 'GET') {
       const [lat, lon] = String(url.searchParams.get('near') || '').split(',').map(Number);
       const near = Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
@@ -133,6 +126,5 @@ export function createApp(config, { maps = createMaps(config.maps) } = {}){
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   let config;
   try { config = loadConfig(); } catch (e) { console.error(e.message); process.exit(1); }
-  if (!config.maps.browserKey || !config.maps.serverKey) console.warn('Aviso: chaves do Google Maps ausentes; o mapa e o cálculo de rotas não funcionarão.');
   createApp(config).listen(config.port, config.host, () => console.log(`Calculadora de Fretes em http://${config.host}:${config.port}`));
 }

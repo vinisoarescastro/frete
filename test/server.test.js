@@ -1,13 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../server/index.js';
+import { createMaps } from '../server/maps.js';
 import { decodePolyline } from '../public/js/polyline.js';
 
-const config = { password: 'segredo', port: 0, host: '127.0.0.1', trustProxy: false, sessionDays: 1, maps: { browserKey: 'BK', serverKey: 'SK', mapId: 'M' } };
+const config = { password: 'segredo', port: 0, host: '127.0.0.1', trustProxy: false, sessionDays: 1, maps: {} };
 const fakeMaps = {
   geocode: async a => ({ found: true, lat: -16.7, lon: -49.2, name: a, approx: false }),
   route: async () => ({ meters: 12345, polyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' })
 };
+
+test('maps: Nominatim escolhe o resultado mais próximo e OSRM devolve metros', async () => {
+  const calls = [];
+  const fake = async (url, opts) => {
+    calls.push({ url: String(url), ua: opts?.headers?.['User-Agent'] });
+    if (String(url).includes('nominatim')) return { ok: true, json: async () => [{ lat: '-10', lon: '-10', display_name: 'longe' }, { lat: '-16.7', lon: '-49.2', display_name: 'perto' }] };
+    return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 5400, geometry: 'abc' }] }) };
+  };
+  const m = createMaps({ contact: '' }, fake);
+  const g = await m.geocode('Rua X', { lat: -16.69, lon: -49.26 });
+  assert.equal(g.name, 'perto');
+  assert.match(calls[0].ua, /^calculadora-de-fretes/);
+  const r = await m.route({ lat: 1, lon: 2 }, { lat: 3, lon: 4 });
+  assert.deepEqual(r, { meters: 5400, polyline: 'abc' });
+  await assert.rejects(() => m.route({ lat: 999, lon: 0 }, { lat: 0, lon: 0 }), /inválidas/);
+});
 
 async function start(){
   const server = createApp(config, { maps: fakeMaps });
@@ -25,7 +42,7 @@ test('sem login: páginas redirecionam e API devolve 401', async () => {
     const page = await fetch(s.base + '/', { redirect: 'manual' });
     assert.equal(page.status, 303); assert.equal(page.headers.get('location'), '/login');
     assert.equal((await fetch(s.base + '/js/main.js', { redirect: 'manual' })).status, 303);
-    assert.equal((await fetch(s.base + '/api/config')).status, 401);
+    assert.equal((await fetch(s.base + '/api/geocode?address=x')).status, 401);
     assert.equal((await fetch(s.base + '/login')).status, 200);
   } finally { await s.close(); }
 });
@@ -41,14 +58,13 @@ test('senha errada é recusada; certa libera o acesso, com cookie HttpOnly', asy
     const h = { Cookie: cookie.split(';')[0] };
     const home = await fetch(s.base + '/', { headers: h });
     assert.equal(home.status, 200); assert.match(await home.text(), /Calculadora de Fretes/);
-    assert.deepEqual(await (await fetch(s.base + '/api/config', { headers: h })).json(), { mapsKey: 'BK', mapId: 'M' });
     const g = await (await fetch(s.base + '/api/geocode?address=Rua%20X', { headers: h })).json();
     assert.equal(g.found, true);
     const r = await fetch(s.base + '/api/route', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: { lat: 1, lon: 1 }, to: { lat: 2, lon: 2 } }) });
     assert.equal((await r.json()).meters, 12345);
     // logout invalida a sessão
     await fetch(s.base + '/logout', { method: 'POST', headers: h, redirect: 'manual' });
-    assert.equal((await fetch(s.base + '/api/config', { headers: h })).status, 401);
+    assert.equal((await fetch(s.base + '/api/geocode?address=x', { headers: h })).status, 401);
   } finally { await s.close(); }
 });
 

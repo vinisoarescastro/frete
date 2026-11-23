@@ -1,6 +1,6 @@
 # Calculadora de Fretes
 
-Calculadora de frete com orçamento para o cliente, mapa e rotas do Google Maps, protegida por senha.
+Calculadora de frete com orçamento para o cliente, mapa e rotas do OpenStreetMap, protegida por senha.
 Node.js puro, **sem dependências** (`npm install` não é necessário).
 
 ## Estrutura
@@ -9,12 +9,13 @@ Node.js puro, **sem dependências** (`npm install` não é necessário).
 server/            Servidor HTTP
   index.js         Rotas, login, cabeçalhos de segurança
   auth.js          Sessões e bloqueio por tentativas
-  maps.js          Proxy para Geocoding API e Routes API (chave do servidor)
+  maps.js          Busca de endereços (Nominatim) e rotas (OSRM)
   static.js        Entrega de arquivos estáticos
   config.js        Variáveis de ambiente
 views/login.html   Tela de login
 public/            Aplicação (só acessível após o login)
   css/styles.css
+  vendor/leaflet/  Biblioteca do mapa (Leaflet, incluída no projeto)
   js/              Módulos ES: calc (regras), state, forms, render, quote, geo, map, main
 test/              Testes (npm test)
 ```
@@ -22,24 +23,20 @@ test/              Testes (npm test)
 ## Rodar localmente
 
 ```bash
-cp .env.example .env     # edite APP_PASSWORD e as chaves do Google
+cp .env.example .env     # edite APP_PASSWORD
 npm start                # http://127.0.0.1:3000
 npm test
 ```
 
 Requer Node 22.9 ou superior.
 
-## Google Cloud (duas chaves)
+## Mapa, endereços e rotas
 
-No projeto do Google Cloud, ative a cobrança e as APIs **Maps JavaScript API**, **Geocoding API** e **Routes API**.
+Tudo vem do OpenStreetMap, **sem chave de API e sem cartão**: imagens do mapa (tile.openstreetmap.org), busca de endereços (Nominatim) e rotas (OSRM).
+São serviços públicos e gratuitos, adequados para uso pessoal e leve. O servidor respeita o limite de 1 busca por segundo e
+identifica o app no User-Agent. Opcionalmente, informe um e-mail em `NOMINATIM_CONTACT`.
 
-| Chave | Variável | Restrição recomendada |
-|-------|----------|-----------------------|
-| Navegador | `GOOGLE_MAPS_BROWSER_KEY` | Referenciadores HTTP: `https://seu-dominio/*`; só Maps JavaScript API |
-| Servidor | `GOOGLE_MAPS_SERVER_KEY` | Endereço IP da VPS; só Geocoding API e Routes API |
-
-A chave do navegador é entregue apenas depois do login. A do servidor nunca sai do servidor.
-Opcional: crie um *Map ID* e coloque em `GOOGLE_MAPS_MAP_ID` (o padrão `DEMO_MAP_ID` serve para uso pessoal).
+O site precisa ser aberto por `http://` ou `https://` (não por arquivo local), senão o OpenStreetMap bloqueia as imagens do mapa.
 
 ## Publicar na VPS
 

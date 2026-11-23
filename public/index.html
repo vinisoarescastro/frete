@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Calculadora de Fretes</title>
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
@@ -55,7 +56,7 @@
           <button class="btn" id="btnConfirm" type="button" style="display:none">Confirmar pontos e calcular distâncias</button>
         </div>
         <div class="status" id="geoStatus" aria-live="polite"></div>
-        <p class="note" id="geoNote">Passo 1: localize os endereços e confira os pontos no mapa. Passo 2: confirme para calcular as distâncias. Usa o Google Maps. Os endereços digitados são enviados ao Google. Se falhar, preencha as distâncias manualmente. Elas sempre podem ser editadas.</p>
+        <p class="note" id="geoNote">Passo 1: localize os endereços e confira os pontos no mapa. Passo 2: confirme para calcular as distâncias. Usa OpenStreetMap (Nominatim) e OSRM, sem chave de API. Os endereços digitados são enviados a esses serviços públicos. Se falhar, preencha as distâncias manualmente. Elas sempre podem ser editadas.</p>
 
         <div id="mapBox" class="hidden"><div id="map"></div><div class="legend" id="mapLegend"></div></div>
 
@@ -133,6 +134,7 @@
 <div id="printArea"></div>
 <div id="toast" class="toast hidden" role="status"></div>
 
+<script src="/vendor/leaflet/leaflet.js"></script>
 <script type="module" src="/js/main.js"></script>
 </body>
 </html>

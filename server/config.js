@@ -10,10 +10,6 @@ export function loadConfig(env = process.env){
     host: env.HOST || '127.0.0.1',
     trustProxy: bool(env.TRUST_PROXY),
     sessionDays: Number(env.SESSION_DAYS) || 7,
-    maps: {
-      browserKey: env.GOOGLE_MAPS_BROWSER_KEY || '',
-      serverKey: env.GOOGLE_MAPS_SERVER_KEY || '',
-      mapId: env.GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID'
-    }
+    maps: { contact: env.NOMINATIM_CONTACT || '' }
   };
 }
