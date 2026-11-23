@@ -108,3 +108,20 @@ test('maps: com GEOAPIFY_KEY usa o Geoapify e converte geocodificação e rota',
   const bad = createMaps({ geoapifyKey: 'KEY' }, async () => ({ ok: false, status: 401 }));
   await assert.rejects(() => bad.geocode('x'), /recusou a chave/);
 });
+
+test('maps: se o Nominatim falhar, usa o Photon como reserva; sem nenhum, devolve erro claro', async () => {
+  let nominatimCalls = 0;
+  const fake = async url => {
+    if (String(url).includes('nominatim')) { nominatimCalls++; throw new Error('timeout'); }
+    return { ok: true, json: async () => ({ features: [
+      { properties: { countrycode: 'AR', name: 'fora' }, geometry: { coordinates: [-58, -34] } },
+      { properties: { countrycode: 'BR', name: 'Rua Martins', district: 'Jardim Mariliza', city: 'Goiânia', state: 'Goiás', type: 'street' }, geometry: { coordinates: [-49.2, -16.73] } }] }) };
+  };
+  const m = createMaps({}, fake);
+  const g = await m.geocode('Rua Martins 43, Goiânia', { lat: -16.7, lon: -49.2 });
+  assert.equal(g.found, true); assert.equal(g.lat, -16.73); assert.match(g.name, /Rua Martins/); assert.equal(g.approx, true);
+  await m.geocode('Rua Martins 43, Goiânia');
+  assert.equal(nominatimCalls, 1);   // depois da falha, não tenta o Nominatim de novo por alguns minutos
+  const down = createMaps({}, async () => { throw new Error('rede'); });
+  await assert.rejects(() => down.geocode('Rua X'), /indisponível/);
+});
