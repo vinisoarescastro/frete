@@ -3,7 +3,6 @@
 import { Q, app } from './state.js';
 import { $, kmf } from './utils.js';
 import { num } from './calc.js';
-import { decodePolyline } from './polyline.js';
 
 let MAP = null, LAYER = null, MAP_SIG = '';
 export const mapSig = () => Q.mode + '|' + Q.finalDest;
@@ -37,8 +36,7 @@ export function drawMap(keepView, onPinMoved){
   const items = [];
   legs.forEach(([k, name, color, w, dash]) => {
     const rt = routes[k]; if (!geo.confirmed || !rt) return;
-    const path = decodePolyline(rt.polyline).map(p => [p.lat, p.lng]);
-    L.polyline(path, { color, weight: w, opacity: .85, dashArray: dash }).addTo(LAYER);
+    L.polyline(rt.coords, { color, weight: w, opacity: .85, dashArray: dash }).addTo(LAYER);
     items.push(`<span><i style="background:${color}"></i>${name}: ${kmf(rt.km)}</span>`);
   });
 

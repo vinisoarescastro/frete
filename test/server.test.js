@@ -2,12 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../server/index.js';
 import { createMaps } from '../server/maps.js';
-import { decodePolyline } from '../public/js/polyline.js';
 
 const config = { password: 'segredo', port: 0, host: '127.0.0.1', trustProxy: false, sessionDays: 1, maps: {} };
 const fakeMaps = {
   geocode: async a => ({ found: true, lat: -16.7, lon: -49.2, name: a, approx: false }),
-  route: async () => ({ meters: 12345, polyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' })
+  route: async () => ({ meters: 12345, coords: [[1, 1], [2, 2]] })
 };
 
 test('maps: Nominatim escolhe o resultado mais próximo e OSRM devolve metros', async () => {
@@ -15,14 +14,14 @@ test('maps: Nominatim escolhe o resultado mais próximo e OSRM devolve metros', 
   const fake = async (url, opts) => {
     calls.push({ url: String(url), ua: opts?.headers?.['User-Agent'] });
     if (String(url).includes('nominatim')) return { ok: true, json: async () => [{ lat: '-10', lon: '-10', display_name: 'longe' }, { lat: '-16.7', lon: '-49.2', display_name: 'perto' }] };
-    return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 5400, geometry: 'abc' }] }) };
+    return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 5400, geometry: { coordinates: [[-49.2, -16.7], [-49.3, -16.8]] } }] }) };
   };
   const m = createMaps({ contact: '' }, fake);
   const g = await m.geocode('Rua X', { lat: -16.69, lon: -49.26 });
   assert.equal(g.name, 'perto');
   assert.match(calls[0].ua, /^calculadora-de-fretes/);
   const r = await m.route({ lat: 1, lon: 2 }, { lat: 3, lon: 4 });
-  assert.deepEqual(r, { meters: 5400, polyline: 'abc' });
+  assert.deepEqual(r, { meters: 5400, coords: [[-16.7, -49.2], [-16.8, -49.3]] });
   await assert.rejects(() => m.route({ lat: 999, lon: 0 }, { lat: 0, lon: 0 }), /inválidas/);
 });
 
@@ -87,7 +86,21 @@ test('não permite sair da pasta public (path traversal)', async () => {
   } finally { await s.close(); }
 });
 
-test('decodePolyline decodifica o exemplo oficial do Google', () => {
-  const pts = decodePolyline('_p~iF~ps|U_ulLnnqC_mqNvxq`@');
-  assert.deepEqual(pts, [{ lat: 38.5, lng: -120.2 }, { lat: 40.7, lng: -120.95 }, { lat: 43.252, lng: -126.453 }]);
+
+test('maps: com GEOAPIFY_KEY usa o Geoapify e converte geocodificação e rota', async () => {
+  const urls = [];
+  const fake = async url => {
+    urls.push(String(url));
+    if (String(url).includes('/geocode/')) return { ok: true, status: 200, json: async () => ({ results: [{ lat: -16.7, lon: -49.2, formatted: 'Rua X, Goiânia', result_type: 'street' }] }) };
+    return { ok: true, status: 200, json: async () => ({ features: [{ properties: { distance: 8000 }, geometry: { type: 'MultiLineString', coordinates: [[[-49.2, -16.7], [-49.3, -16.8]], [[-49.3, -16.8], [-49.4, -16.9]]] } }] }) };
+  };
+  const m = createMaps({ geoapifyKey: 'KEY' }, fake);
+  const g = await m.geocode('Rua X, 10, Goiânia', { lat: -16.69, lon: -49.26 });
+  assert.equal(g.name, 'Rua X, Goiânia');
+  assert.equal(g.approx, true);   // tinha número, mas o resultado é só a rua
+  assert.match(urls[0], /apiKey=KEY/); assert.match(urls[0], /bias=proximity/);
+  const r = await m.route({ lat: -16.7, lon: -49.2 }, { lat: -16.9, lon: -49.4 });
+  assert.equal(r.meters, 8000); assert.equal(r.coords.length, 4); assert.deepEqual(r.coords[0], [-16.7, -49.2]);
+  const bad = createMaps({ geoapifyKey: 'KEY' }, async () => ({ ok: false, status: 401 }));
+  await assert.rejects(() => bad.geocode('x'), /recusou a chave/);
 });

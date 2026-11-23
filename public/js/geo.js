@@ -45,7 +45,7 @@ async function routeKm(a, b){
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: { lat: a.lat, lon: a.lon }, to: { lat: b.lat, lon: b.lon } })
   });
-  return { km: Math.round(r.meters / 100) / 10, polyline: r.polyline };   // km com 1 casa
+  return { km: Math.round(r.meters / 100) / 10, coords: r.coords };   // km com 1 casa
 }
 
 // Calcula todas as rotas a partir dos pontos e preenche as distâncias do orçamento

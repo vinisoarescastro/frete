@@ -9,7 +9,8 @@ Node.js puro, **sem dependências** (`npm install` não é necessário).
 server/            Servidor HTTP
   index.js         Rotas, login, cabeçalhos de segurança
   auth.js          Sessões e bloqueio por tentativas
-  maps.js          Busca de endereços (Nominatim) e rotas (OSRM)
+  maps.js          Escolhe o provedor de endereços e rotas
+  providers/       geoapify.js (com chave) e osm.js (Nominatim + OSRM, sem chave)
   static.js        Entrega de arquivos estáticos
   config.js        Variáveis de ambiente
 views/login.html   Tela de login
@@ -32,9 +33,10 @@ Requer Node 22.9 ou superior.
 
 ## Mapa, endereços e rotas
 
-Tudo vem do OpenStreetMap, **sem chave de API e sem cartão**: imagens do mapa (tile.openstreetmap.org), busca de endereços (Nominatim) e rotas (OSRM).
-São serviços públicos e gratuitos, adequados para uso pessoal e leve. O servidor respeita o limite de 1 busca por segundo e
-identifica o app no User-Agent. Opcionalmente, informe um e-mail em `NOMINATIM_CONTACT`.
+- **Imagens do mapa:** OpenStreetMap (sem chave).
+- **Busca de endereços e rotas:** [Geoapify](https://myprojects.geoapify.com) quando `GEOAPIFY_KEY` está no `.env`
+  (cadastro gratuito, sem cartão, 3.000 créditos por dia). A chave fica só no servidor.
+  Sem a chave, usa Nominatim + OSRM do OpenStreetMap, que são servidores públicos e podem falhar ou ficar lentos.
 
 O site precisa ser aberto por `http://` ou `https://` (não por arquivo local), senão o OpenStreetMap bloqueia as imagens do mapa.
 

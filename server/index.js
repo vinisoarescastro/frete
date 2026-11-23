@@ -126,5 +126,6 @@ export function createApp(config, { maps = createMaps(config.maps) } = {}){
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   let config;
   try { config = loadConfig(); } catch (e) { console.error(e.message); process.exit(1); }
+  console.log('Busca e rotas via ' + (config.maps.geoapifyKey ? 'Geoapify' : 'OpenStreetMap (sem chave)'));
   createApp(config).listen(config.port, config.host, () => console.log(`Calculadora de Fretes em http://${config.host}:${config.port}`));
 }
