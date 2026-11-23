@@ -12,9 +12,8 @@ export function renderValidation(res){
   res.errors.forEach(e => { if (e.key) map[e.key] = e.msg; });
   document.querySelectorAll('[data-s],[data-q]').forEach(el => {
     const key = (el.dataset.s !== undefined ? 's.' + el.dataset.s : 'q.' + el.dataset.q);
-    const field = el.closest('.ds-field'); if (!field) return;
-    const m = field.querySelector('.msg');
     if (map[key]) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+    const m = el.closest('.ds-field')?.querySelector('.msg');
     if (m) { m.textContent = map[key] || ''; m.hidden = !map[key]; }
   });
 

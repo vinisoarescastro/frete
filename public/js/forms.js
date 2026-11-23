@@ -1,7 +1,7 @@
 'use strict';
 /* Formulários gerados por configuração e ligação entre campos e estado. */
-import { S, Q, update } from './state.js';
-import { $, icon } from './utils.js';
+import { S, Q, app, update } from './state.js';
+import { $, icon, kmf } from './utils.js';
 
 export function field(scope, key, label, o = {}){
   const attr = scope === 's' ? 'data-s' : 'data-q';
@@ -31,9 +31,6 @@ export function buildForms(){
     field('q', 'desc', 'Descrição da carga ou serviço', { type: 'textarea', cls: 'span2' }),
     field('q', 'notes', 'Observações para o cliente', { type: 'textarea', cls: 'span2' })
   ].join('');
-  $('#tripsBox').innerHTML = field('q', 'trips', 'Viagens de ida', { suf: 'viagens', hint: 'Entre as viagens o veículo volta à coleta.' });
-  $('#finalBox').innerHTML = field('q', 'finalDest', 'Depois da entrega, voltar para', { type: 'select', options: [['home', 'Minha residência'], ['other', 'Outro endereço']] });
-
   const rows = [
     ['homePickup', 'Residência até a coleta', 'always'],
     ['pickupDelivery', 'Coleta até a entrega (cada ida)', 'always'],
@@ -42,9 +39,9 @@ export function buildForms(){
     ['pickupFinal', 'Coleta até o destino final', 'roundtrip']
   ];
   $('#dRows').innerHTML = rows.map(([k, l, m]) => `<div class="drow" data-key="${k}" data-modes="${m}">
-    <label class="ds-field"><span class="ds-label"><span data-lbl>${l}</span> <span class="ds-badge ds-badge--sm hidden" data-tag></span></span>
-      <div class="ds-group"><input class="ds-control" data-q="${k}" type="number" step="any" inputmode="decimal" placeholder="0" autocomplete="off"><span class="ds-group__addon ds-group__addon--end">km</span></div><p class="ds-error msg" hidden></p></label>
-    <button class="ds-btn ds-btn--ghost ds-btn--sm hidden" type="button" data-reset title="Voltar a copiar o trecho inverso">Restaurar</button></div>`).join('');
+    <label class="drow__label" for="d-${k}"><span data-lbl>${l}</span><span class="ds-badge ds-badge--sm hidden" data-tag></span></label>
+    <button class="ds-btn ds-btn--ghost ds-btn--sm hidden" type="button" data-reset title="Voltar a copiar o trecho inverso">Restaurar</button>
+    <span class="drow__val"><input class="km-input" id="d-${k}" data-q="${k}" type="number" step="any" inputmode="decimal" placeholder="0" autocomplete="off"><span class="km-unit">km</span></span></div>`).join('');
 
   $('#secDesp').innerHTML = [
     field('q', 'tolls', 'Pedágios', R$), field('q', 'parking', 'Estacionamento', R$),
@@ -140,6 +137,8 @@ export function renderRoute(){
   $('#distBox').hidden = !show;
   $('#btnDistManual').hidden = show;
 
+  const r = app.last && app.last.r;
+  $('#kmTotal').textContent = r ? `Total ${kmf(r.km.total)}` : '';
   const finLabel = Q.finalDest === 'home' ? 'residência' : 'outro endereço';
   document.querySelectorAll('.drow').forEach(row => {
     const k = row.dataset.key, modes = row.dataset.modes;

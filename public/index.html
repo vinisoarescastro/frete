@@ -102,18 +102,20 @@
           </div>
           <div class="status" id="geoStatus" aria-live="polite"></div>
 
-          <fieldset class="modes">
-            <legend class="ds-label">Modalidade</legend>
-            <div class="ds-segmented ds-segmented--full seg">
+          <div class="trip-options">
+            <div class="ds-segmented seg" role="radiogroup" aria-label="Modalidade">
               <label class="ds-segmented__item"><input type="radio" name="mode" data-q="mode" value="oneway">Somente ida</label>
               <label class="ds-segmented__item"><input type="radio" name="mode" data-q="mode" value="roundtrip">Ida e volta</label>
               <label class="ds-segmented__item"><input type="radio" name="mode" data-q="mode" value="multiple">Várias viagens</label>
             </div>
-          </fieldset>
-          <div class="form-grid">
-            <div id="tripsBox" class="hidden"></div>
-            <div id="finalBox"></div>
-            <div id="finalAddrBox" class="span2 hidden"><div class="ds-field ac-field" data-acwrap="final">
+            <div class="inline-opts">
+              <label class="inline-opt hidden" id="tripsBox"><span>Viagens</span><input class="mini-input" data-q="trips" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" aria-label="Quantidade de viagens de ida"></label>
+              <label class="inline-opt"><span>Ao final, voltar para</span>
+                <span class="inline-select"><select data-q="finalDest"><option value="home">minha residência</option><option value="other">outro endereço</option></select><svg class="icon icon--sm" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></span>
+              </label>
+            </div>
+          </div>
+          <div id="finalAddrBox" class="hidden"><div class="ds-field ac-field" data-acwrap="final">
               <label class="ds-label" for="ac-final">Destino final</label>
               <div class="ds-input-wrap">
                 <svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#map-pin"/></svg>
@@ -123,10 +125,9 @@
               </div>
               <p class="ds-help ac-note" hidden></p>
             </div></div>
-          </div>
 
           <div id="distBox" hidden>
-            <h3 class="sub-title">Distâncias</h3>
+            <div class="drows-head"><h3 class="sub-title">Distâncias</h3><span class="km-total" id="kmTotal"></span></div>
             <div class="drows" id="dRows"></div>
           </div>
           <div><button class="ds-btn ds-btn--ghost ds-btn--sm" id="btnDistManual" type="button">Preencher distâncias manualmente</button></div>
