@@ -45,3 +45,12 @@ test('calculate: desconto percentual reduz o preço final', () => {
   const disc = calculate(DEFAULT_SETTINGS, quote({ pickupDelivery: '100', discount: '10' })).r;
   assert.ok(Math.abs(disc.price - base.price * 0.9) < 0.02);
 });
+
+test('calculate: modo automático sugere o método de maior valor', () => {
+  for (const ratePerKm of ['0.5', '10']) {
+    const S = { ...DEFAULT_SETTINGS, ratePerKm };
+    const { r } = calculate(S, quote({ method: 'auto', pickupDelivery: '100' }));
+    assert.equal(r.auto, true);
+    assert.equal(r.suggested, Math.max(r.m1.price, r.m2.price));
+  }
+});

@@ -15,13 +15,14 @@ export function newQuote(){
     homePickup: '', pickupDelivery: '', deliveryPickup: '', deliveryFinal: '', pickupFinal: '',
     touched: {}, pts: {}, distManual: false, savedId: null,
     tolls: S.defTolls, parking: S.defParking, food: S.defFood, otherExp: S.defOther, hours: '',
-    fuel: '', method: '2', discType: 'pct', discount: '', manual: ''
+    fuel: '', method: 'auto', discType: 'pct', discount: '', manual: ''
   };
 }
 
 export const Q = Object.assign(newQuote(), lsGet(KEY_Q, {}));
 Q.touched = Q.touched || {};
 Q.pts = Q.pts || {};
+if (Q.method === '2') Q.method = 'auto';   // rascunho antigo: passa a sugerir o método mais vantajoso
 
 /** Troca o conteúdo do orçamento (ex.: ao abrir um recente) mantendo a mesma referência do objeto Q. */
 export function replaceQuote(data){

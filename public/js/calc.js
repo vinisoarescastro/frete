@@ -138,8 +138,9 @@ export function calculate(S, Q){
   const reqRate = (c.total / denom - c.reimb) / km.total;
 
   // ---- Método escolhido, desconto e preço manual ----
-  let chosen = Q.method === '1' ? m1 : m2;
-  if (Q.method === '1' && !m1.available) {
+  const auto = Q.method !== '1' && Q.method !== '2';   // padrão: sempre o método mais vantajoso (maior preço)
+  let chosen = auto ? (m1.available && m1.price > m2.price ? m1 : m2) : (Q.method === '1' ? m1 : m2);
+  if (!auto && Q.method === '1' && !m1.available) {
     chosen = m2;
     warnings.push('Método 1 indisponível: defina o valor cobrado por km. Usando o Método 2.');
   }
@@ -170,7 +171,7 @@ export function calculate(S, Q){
 
   return {
     errors, warnings,
-    r: { cardPrice: p.cardFee > 0 ? round2(finalPrice / (1 - p.cardFee / 100)) : null, mode, trips, fuelName: eta ? 'Etanol' : 'Gasolina', km, c, p, m1, m2, reqRate, chosen, suggested, discAmt, manualUsed,
+    r: { cardPrice: p.cardFee > 0 ? round2(finalPrice / (1 - p.cardFee / 100)) : null, auto, mode, trips, fuelName: eta ? 'Etanol' : 'Gasolina', km, c, p, m1, m2, reqRate, chosen, suggested, discAmt, manualUsed,
          price: finalPrice, fin, diff: round2(finalPrice - suggested),
          diffPct: suggested > 0 ? (finalPrice - suggested) / suggested * 100 : 0,
          partial: incomplete.length > 0 }
