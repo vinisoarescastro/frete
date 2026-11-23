@@ -68,7 +68,8 @@ export function buildForms(){
     field('s', 'providerName', 'Seu nome ou empresa', { type: 'text' }),
     field('s', 'providerPhone', 'Seu telefone', { type: 'tel' }),
     field('s', 'home', 'Endereço residencial', { type: 'text', cls: 'span2', hint: 'Ponto de partida e de retorno.' }),
-    field('s', 'validityDays', 'Validade do orçamento', { suf: 'dias' })
+    field('s', 'validityDays', 'Validade do orçamento', { suf: 'dias' }),
+    field('s', 'quoteNotice', 'Aviso no orçamento', { type: 'textarea', rows: 2, cls: 'span2', hint: 'Aparece para o cliente. Deixe vazio para não mostrar.' })
   ].join('');
   $('#setVei').innerHTML = [
     field('s', 'vehicleType', 'Tipo de veículo', { type: 'text' }),

@@ -57,6 +57,12 @@ export function buildPdf(d){
 
   section('Observações', [['Observações', d.notes]]);
 
+  if (d.notice) {
+    const nl = doc.splitTextToSize('Importante: ' + d.notice, CW);
+    room(nl.length * 4.6 + 4);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...INK);
+    doc.text(nl, M, y + 3); y += nl.length * 4.6 + 4;
+  }
   if (d.validity) {
     room(8);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTED);

@@ -22,7 +22,7 @@ export function quoteData(){
     mode: MODE_NAME[Q.mode], trips, date: fmtDate(Q.date), notes: Q.notes.trim(),
     price: r ? r.price : null, card: r ? r.cardPrice : null,
     base: r ? r.suggested : null, disc: disc > 0.004 ? disc : 0, discPct: r && r.suggested > 0 && disc > 0.004 ? disc / r.suggested * 100 : 0,
-    validity: v, validUntil: v > 0 ? fmtDate(expIso) : ''
+    notice: (S.quoteNotice || '').trim(), validity: v, validUntil: v > 0 ? fmtDate(expIso) : ''
   };
 }
 
@@ -47,24 +47,28 @@ export function quoteHTML(){
     ${tbl('Trajeto', [['Endereço de coleta', d.pickup], ['Endereço de entrega', d.delivery], ['Modalidade', d.mode], ['Quantidade de viagens', d.trips]])}
     <table><tr><th colspan="2">Valores</th></tr>${money.join('')}</table>
     ${tbl('Observações', [['Observações', d.notes]])}
+    ${d.notice ? `<p class="qsub"><b>Importante:</b> ${esc(d.notice)}</p>` : ''}
     <div class="qfoot">${d.validity ? `Orçamento válido por ${d.validity} ${d.validity > 1 ? 'dias' : 'dia'} (até ${d.validUntil}).` : ''}</div></div>`;
 }
 
-// Texto para WhatsApp (negrito com *...*) ou texto simples
+// Endereço resumido para a mensagem: sem CEP, país nem região
+const shortAddr = a => String(a || '').split(',').map(x => x.trim()).filter(x => x && !/^\d{5}-?\d{3}$/.test(x) && !/^brasil$/i.test(x) && !/^região/i.test(x)).join(', ');
+
+// Texto para WhatsApp (negrito com *...*) ou texto simples. Sem dados de quem presta o serviço.
 function quoteText(wa){
   const d = quoteData(), L = [], b = t => wa ? `*${t}*` : t;
-  L.push(b('ORÇAMENTO DE FRETE'));
-  if (d.provider || d.providerPhone) L.push([d.provider, d.providerPhone].filter(Boolean).join(' | '));
-  L.push(`Data: ${d.issue}`, '');
+  L.push(b('Orçamento de frete'), '');
+  const first = d.client.split(/\s+/)[0];
+  L.push(first ? `Olá, ${first}! Segue o orçamento do seu frete.` : 'Segue o orçamento do seu frete.', '');
   const kv = (k, v) => { if (v) L.push(`${b(k + ':')} ${v}`); };
-  kv('Cliente', d.client); kv('Telefone', d.phone); kv('Serviço', d.service); kv('Descrição', d.desc);
-  kv('Coleta', d.pickup); kv('Entrega', d.delivery); kv('Modalidade', d.mode); kv('Viagens', d.trips); kv('Data prevista', d.date);
-  L.push('', b('VALORES'));
-  if (d.disc > 0) { L.push(`Valor do serviço: ${brl(d.base)}`, `Desconto (${pctf(d.discPct)}): -${brl(d.disc)}`); }
-  L.push(b(`Total à vista (Pix ou dinheiro): ${brl(d.price)}`));
-  if (d.card) L.push(b(`Total no cartão de crédito: ${brl(d.card)}`));
+  kv('Descrição', d.desc); kv('Coleta', shortAddr(d.pickup)); kv('Entrega', shortAddr(d.delivery)); kv('Data prevista', d.date);
+  L.push('');
+  if (d.disc > 0) L.push(`Valor do serviço: ${brl(d.base)}`, `Desconto (${pctf(d.discPct)}): -${brl(d.disc)}`);
+  L.push(`${b('Valor:')} ${brl(d.price)}`, '', b('Formas de pagamento'), `Pix ou dinheiro: ${brl(d.price)}`);
+  if (d.card) L.push(`Cartão de crédito: ${brl(d.card)}`);
   if (d.notes) L.push('', `${b('Observações:')} ${d.notes}`);
-  if (d.validity) L.push('', wa ? `_Orçamento válido por ${d.validity} ${d.validity > 1 ? 'dias' : 'dia'} (até ${d.validUntil})._` : `Orçamento válido por ${d.validity} ${d.validity > 1 ? 'dias' : 'dia'} (até ${d.validUntil}).`);
+  if (d.notice) L.push('', `${b('Importante:')} ${d.notice}`);
+  if (d.validity) L.push('', wa ? `_Válido até ${d.validUntil}._` : `Válido até ${d.validUntil}.`);
   return L.join('\n');
 }
 
