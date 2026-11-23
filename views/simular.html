@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Simule seu frete | Vertice Fretes</title>
+<link rel="icon" href="/assets/logo-fretes.png" type="image/png">
+<link rel="stylesheet" href="/assets/css/fonts.css">
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/components.css">
+<link rel="stylesheet" href="/assets/css/layout.css">
+<link rel="stylesheet" href="/assets/css/icons.css">
+<script src="/assets/js/theme.js"></script>
+<style>
+body{background:var(--bg);min-height:100vh}
+.sim{max-width:32rem;margin:0 auto;padding:var(--space-6) var(--space-4) var(--space-10);display:flex;flex-direction:column;gap:var(--space-5)}
+.sim__logo{display:flex;justify-content:center}
+.sim__logo img{height:3.25rem;width:auto;background:#fff;border-radius:var(--radius-md);padding:.35rem .6rem}
+.sim h1{font-size:var(--text-2xl,1.5rem);margin:0;text-align:center;letter-spacing:-.01em}
+.sim__lead{margin:0;text-align:center;color:var(--text-muted)}
+.sim form{display:flex;flex-direction:column;gap:var(--space-4)}
+.sim .ds-card__body{display:flex;flex-direction:column;gap:var(--space-4)}
+.sim .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.sim .check{display:flex;gap:var(--space-2);align-items:flex-start;font-size:var(--text-sm);color:var(--text-muted)}
+.sim .check input{margin-top:.2rem}
+.sim .ac{position:relative}
+.sim .ac-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;list-style:none;margin:0;padding:var(--space-1);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-md);max-height:15rem;overflow:auto}
+.sim .ac-list[hidden]{display:none}
+.sim .ac-item{padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);cursor:pointer;font-size:var(--text-sm)}
+.sim .ac-item:hover,.sim .ac-item[aria-selected="true"]{background:var(--primary-soft)}
+.sim .ok{color:var(--success);font-size:var(--text-xs)}
+.sim .seg{display:flex}
+.sim .seg label{flex:1;text-align:center;position:relative;cursor:pointer}
+.sim .seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.sim .result{text-align:center;display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-2) 0}
+.sim .result__label{color:var(--text-muted);font-size:var(--text-sm)}
+.sim .result__price{font-size:2.75rem;font-weight:var(--weight-semibold);letter-spacing:-.02em;line-height:1.1}
+.sim .result__note{color:var(--text-muted);font-size:var(--text-sm);margin:0}
+.sim .btn-wa{background:#25d366;border-color:#25d366;color:#fff}
+.sim .btn-wa:hover{background:#1ebe5a;border-color:#1ebe5a;color:#fff}
+.sim .btn-wa .icon{fill:currentColor;stroke:none}
+[hidden]{display:none!important}
+.sim .seg{background:var(--surface-muted);border-radius:var(--radius-md);padding:3px;gap:2px}
+.sim .seg .ds-segmented__item{display:flex;align-items:center;justify-content:center;min-height:2.5rem;border-radius:var(--radius-sm);color:var(--text-muted)}
+.sim .seg .ds-segmented__item:has(input:checked){background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.sim .seg .ds-segmented__item:has(input:focus-visible){box-shadow:var(--focus-ring)}
+</style>
+</head>
+<body>
+<main class="sim">
+  <div class="sim__logo"><img src="/assets/logo-fretes.png" alt="Vertice Fretes" width="582" height="197"></div>
+  <h1>Simule o valor do seu frete</h1>
+  <p class="sim__lead">Rápido, sem compromisso.</p>
+
+  <!-- Etapa 1: dados do cliente -->
+  <section class="ds-card" id="step1">
+    <div class="ds-card__body">
+      <form id="formStart" novalidate>
+        <label class="ds-field"><span class="ds-label">Seu nome</span><input class="ds-control" id="name" autocomplete="name" maxlength="100" required></label>
+        <label class="ds-field"><span class="ds-label">WhatsApp</span><input class="ds-control" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" required></label>
+        <div class="hp" aria-hidden="true"><label>Site<input id="website" tabindex="-1" autocomplete="off"></label></div>
+        <label class="check"><input type="checkbox" id="consent">Concordo em usar meu nome e telefone para receber o valor e ser contatado sobre este frete.</label>
+        <p class="ds-error" id="err1" hidden></p>
+        <button class="ds-btn ds-btn--primary ds-btn--lg" type="submit" id="btnStart">Continuar</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Etapa 2: simulador (libera depois do cadastro) -->
+  <section class="ds-card" id="step2" hidden>
+    <div class="ds-card__body">
+      <form id="formSim" novalidate>
+        <div class="ds-field ac">
+          <label class="ds-label" for="pickup">Endereço de coleta</label>
+          <input class="ds-control" id="pickup" role="combobox" aria-autocomplete="list" aria-controls="pickup-list" aria-expanded="false" autocomplete="off" placeholder="Digite o endereço">
+          <ul class="ac-list" id="pickup-list" role="listbox" hidden></ul>
+          <span class="ok" id="pickup-ok" hidden>Endereço confirmado</span>
+        </div>
+        <div class="ds-field ac">
+          <label class="ds-label" for="delivery">Endereço de entrega</label>
+          <input class="ds-control" id="delivery" role="combobox" aria-autocomplete="list" aria-controls="delivery-list" aria-expanded="false" autocomplete="off" placeholder="Digite o endereço">
+          <ul class="ac-list" id="delivery-list" role="listbox" hidden></ul>
+          <span class="ok" id="delivery-ok" hidden>Endereço confirmado</span>
+        </div>
+        <div class="ds-field">
+          <span class="ds-label" id="lblMode">Tipo de frete</span>
+          <div class="ds-segmented seg" role="radiogroup" aria-labelledby="lblMode">
+            <label class="ds-segmented__item"><input type="radio" name="mode" value="oneway" checked>Somente ida</label>
+            <label class="ds-segmented__item"><input type="radio" name="mode" value="roundtrip">Ida e volta</label>
+          </div>
+        </div>
+        <div class="ds-field">
+          <label class="ds-label" for="date">Data desejada</label>
+          <input class="ds-control" id="date" type="date">
+          <label class="check"><input type="checkbox" id="noDate">Ainda não tenho uma data definida</label>
+        </div>
+        <p class="ds-error" id="err2" hidden></p>
+        <button class="ds-btn ds-btn--primary ds-btn--lg" type="submit" id="btnSim">Calcular valor</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Resultado -->
+  <section class="ds-card" id="step3" hidden>
+    <div class="ds-card__body">
+      <div class="result" aria-live="polite">
+        <span class="result__label">Valor estimado</span>
+        <span class="result__price" id="price"></span>
+        <p class="result__note">Estimativa sujeita a confirmação. O valor final pode variar conforme detalhes do serviço.</p>
+      </div>
+      <a class="ds-btn btn-wa ds-btn--lg" id="btnWa" href="#" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#whatsapp"/></svg>Falar no WhatsApp</a>
+      <button class="ds-btn ds-btn--ghost" type="button" id="btnAgain">Fazer outra simulação</button>
+    </div>
+  </section>
+</main>
+<script src="/assets/js/simular.js" type="module"></script>
+</body>
+</html>

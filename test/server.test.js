@@ -193,3 +193,41 @@ test('API de dados salvos exige login e persiste configurações, rascunho e or�
     assert.equal((await fetch(s.base + `/api/quotes/${created.id}`, { headers: h })).status, 404);
   } finally { await s.close(); }
 });
+
+test('simulador público: cadastro, endereços, valor e registro no painel', async () => {
+  const s = await start();
+  try {
+    assert.equal((await fetch(s.base + '/simular')).status, 200);
+    const post = (path, body, token) => fetch(s.base + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Lead-Token': token || '' }, body: JSON.stringify(body) });
+    // sem cadastro não há busca nem simulação
+    assert.equal((await fetch(s.base + '/api/public/suggest?q=rua', { headers: { 'X-Lead-Token': 'x' } })).status, 401);
+    assert.equal((await post('/api/public/simulate', {}, 'x')).status, 401);
+    // validações do cadastro
+    assert.equal((await post('/api/public/start', { name: 'Ana', phone: '123', consent: true })).status, 400);
+    assert.equal((await post('/api/public/start', { name: 'Ana', phone: '(62) 99999-0000', consent: false })).status, 400);
+    // cadastro válido libera o simulador
+    const { token } = await (await post('/api/public/start', { name: 'Ana', phone: '(62) 99999-0000', consent: true })).json();
+    assert.ok(token.length >= 32);
+    const sug = await (await fetch(s.base + '/api/public/suggest?q=rua%20nove', { headers: { 'X-Lead-Token': token } })).json();
+    assert.equal(sug.items.length, 1);
+    const pt = n => ({ name: n, lat: -16.7, lon: -49.2 });
+    assert.equal((await post('/api/public/simulate', { pickup: pt('A'), delivery: pt('B'), mode: 'oneway' }, token)).status, 400);   // sem data nem "sem data"
+    const sim = await post('/api/public/simulate', { pickup: pt('Rua A'), delivery: pt('Rua B'), mode: 'roundtrip', noDate: true }, token);
+    assert.equal(sim.status, 200);
+    const out = await sim.json();
+    assert.ok(out.price > 0);
+    assert.deepEqual(Object.keys(out).sort(), ['mode', 'phone', 'price']);   // nada de custos nem margem
+    // robô (campo invisível) não cria registro
+    await post('/api/public/start', { name: 'Robo', phone: '(62) 99999-0000', consent: true, website: 'x' });
+    // painel: exige login e mostra a simulação
+    assert.equal((await fetch(s.base + '/api/leads')).status, 401);
+    const ck = (await login(s.base, 'segredo')).headers.get('set-cookie').split(';')[0];
+    const list = await (await fetch(s.base + '/api/leads', { headers: { cookie: ck } })).json();
+    assert.equal(list.items.length, 1);
+    assert.equal(list.items[0].name, 'Ana'); assert.equal(list.items[0].phone, '62999990000'); assert.equal(list.items[0].no_date, 1);
+    assert.equal(list.items[0].price, out.price);
+    const one = await (await fetch(s.base + '/api/leads/' + list.items[0].id, { headers: { cookie: ck } })).json();
+    assert.equal(one.pickup, 'Rua A'); assert.equal(one.mode, 'roundtrip');
+    assert.equal((await fetch(s.base + '/api/leads/' + one.id, { method: 'DELETE', headers: { cookie: ck } })).status, 200);
+  } finally { await s.close(); }
+});

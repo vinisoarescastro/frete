@@ -36,6 +36,14 @@ Na VPS, o usuário do serviço precisa ter permissão de escrita na pasta `data/
 - **Copiar texto:** copia o orçamento em texto simples.
 - **PDF:** gera o arquivo. No celular abre o menu de compartilhar; no computador baixa o PDF.
 
+## Simulador para clientes
+
+A página pública `/simular` (sem senha) deixa o cliente simular o valor do frete. Ele informa nome e WhatsApp, aceita o uso dos dados e então o simulador abre: coleta, entrega, tipo de frete (ida ou ida e volta) e data desejada (ou "Ainda não tenho uma data definida"). O valor é calculado no servidor com as suas configurações e só o valor final volta ao cliente (nunca custos, margem ou lucro).
+
+- Cada cadastro e simulação ficam na aba **Simulações** do painel, com botões para chamar no WhatsApp e **Criar orçamento** (abre a calculadora já preenchida).
+- Proteções: campo invisível contra robôs, limite de uso por IP e uma sessão por cadastro para a busca de endereços.
+- O orçamento manual continua independente, na aba Orçamento.
+
 ## Design system
 
 A interface segue o Atlas Design System (repositório `design-system`, lido apenas como referência).

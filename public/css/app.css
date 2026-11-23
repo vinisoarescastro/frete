@@ -264,3 +264,19 @@ fieldset.modes legend{padding:0;margin-bottom:var(--space-2)}
 .brand__img{height:2.6rem;width:auto;display:block}
 :root[data-theme="dark"] .brand__img{background:#fff;border-radius:var(--radius-sm);padding:.2rem .4rem}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand__img{background:#fff;border-radius:var(--radius-sm);padding:.2rem .4rem}}
+
+/* Simulações de clientes */
+.lead-list{display:flex;flex-direction:column;gap:var(--space-3)}
+.lead{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-2)}
+.lead__top{display:flex;justify-content:space-between;gap:var(--space-3);align-items:flex-start}
+.lead__name{font-weight:var(--weight-semibold)}
+.lead__sub,.lead__meta{font-size:var(--text-xs);color:var(--text-muted)}
+.lead__price{font-weight:var(--weight-semibold);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lead__pending{font-weight:var(--weight-medium);font-size:var(--text-xs);color:var(--warning)}
+.lead__route{font-size:var(--text-sm)}
+.lead__arrow{margin:0 .4rem;color:var(--text-subtle);font-size:var(--text-xs)}
+.lead__actions{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center;margin-top:var(--space-1)}
+.lead__actions .ds-icon-btn{margin-left:auto}
+.btn-wa .icon{fill:currentColor;stroke:none}
+
+@media (max-width:640px){.appbar__tabs{overflow-x:auto;scrollbar-width:none}.appbar__tabs::-webkit-scrollbar{display:none}.appbar__tabs .ds-tab{flex:0 0 auto;padding-inline:var(--space-4)}}

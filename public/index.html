@@ -27,6 +27,7 @@
       <nav class="ds-tabs appbar__tabs" role="tablist" aria-label="Seções">
         <a class="ds-tab" role="tab" id="tab-btn-calc" href="#/" data-route="calc" aria-selected="true" aria-controls="tab-calc">Orçamento</a>
         <a class="ds-tab" role="tab" id="tab-btn-hist" href="#/historico" data-route="hist" aria-selected="false" aria-controls="tab-hist">Histórico</a>
+        <a class="ds-tab" role="tab" id="tab-btn-leads" href="#/simulacoes" data-route="leads" aria-selected="false" aria-controls="tab-leads">Simulações</a>
         <a class="ds-tab" role="tab" id="tab-btn-set" href="#/configuracoes" data-route="set" aria-selected="false" aria-controls="tab-set">Configurações</a>
       </nav>
       <div class="appbar__end">
@@ -183,6 +184,16 @@
   <div class="hist-wrap">
     <div class="ds-field"><input class="ds-control" id="histSearch" type="search" placeholder="Buscar por cliente ou endereço" autocomplete="off" aria-label="Buscar orçamentos"></div>
     <section class="ds-card"><div class="ds-card__body"><div class="recent-list" id="recentList"></div></div></section>
+  </div>
+</div>
+
+<!-- SIMULAÇÕES DE CLIENTES -->
+<div id="tab-leads" role="tabpanel" aria-labelledby="tab-btn-leads" class="stack stack--lg hidden">
+  <div class="page-header"><h1 class="t-page-title">Simulações</h1><span class="save-state" id="leadCount"></span></div>
+  <div class="hist-wrap">
+    <p class="note">Clientes que usaram a página <a href="/simular" target="_blank" rel="noopener">/simular</a>. Compartilhe esse link com seus clientes.</p>
+    <div class="ds-field"><input class="ds-control" id="leadSearch" type="search" placeholder="Buscar por nome, telefone ou endereço" autocomplete="off" aria-label="Buscar simulações"></div>
+    <div class="lead-list" id="leadList"></div>
   </div>
 </div>
 

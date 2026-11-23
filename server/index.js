@@ -7,11 +7,13 @@ import { createAuth } from './auth.js';
 import { createMaps, MapsError } from './maps.js';
 import { serveStatic } from './static.js';
 import { openDb } from './db.js';
+import { createLeads } from './leads.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = join(ROOT, 'public');
 const ASSETS = join(ROOT, 'assets');   // estilos, fontes e ícones do design system: públicos (a tela de login também usa)
 const LOGIN_HTML = readFileSync(join(ROOT, 'views', 'login.html'), 'utf8');
+const SIMULAR_HTML = readFileSync(join(ROOT, 'views', 'simular.html'), 'utf8');
 
 // Política de segurança do conteúdo: o app só carrega recursos próprios e as imagens do mapa do OpenStreetMap
 const CSP = [
@@ -72,6 +74,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export function createApp(config, { maps = createMaps(config.maps), db = openDb(config.dbPath) } = {}){
   const auth = createAuth(config);
+  const leads = createLeads({ db, maps });
 
   const isSecure = req => !!req.socket.encrypted || (config.trustProxy && req.headers['x-forwarded-proto'] === 'https');
   const clientIp = req => (config.trustProxy && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress || '';
@@ -87,6 +90,19 @@ export function createApp(config, { maps = createMaps(config.maps), db = openDb(
     if (pathname.startsWith('/assets/') && (method === 'GET' || method === 'HEAD')) {
       if (await serveStatic(req, res, ASSETS, pathname.slice('/assets'.length))) return;
       res.writeHead(404); return res.end();
+    }
+
+    // ---- Simulador público (sem senha): cadastro, busca de endereços e cálculo ----
+    if (pathname === '/simular' && (method === 'GET' || method === 'HEAD')) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(SIMULAR_HTML);
+    }
+    if (pathname.startsWith('/api/public/')) {
+      const ip = clientIp(req), leadToken = String(req.headers['x-lead-token'] || '');
+      if (pathname === '/api/public/start' && method === 'POST') return json(res, 200, leads.start(await readJson(req, 4096), ip));
+      if (pathname === '/api/public/suggest' && method === 'GET') return json(res, 200, await leads.suggest(leadToken, url.searchParams.get('q'), ip));
+      if (pathname === '/api/public/simulate' && method === 'POST') return json(res, 200, await leads.simulate(leadToken, await readJson(req, 8192), ip));
+      return json(res, 404, { error: 'não encontrado' });
     }
 
     const token = auth.tokenFrom(req), authed = auth.valid(token);
@@ -137,6 +153,15 @@ export function createApp(config, { maps = createMaps(config.maps), db = openDb(
       if (method === 'GET') { const r = db.getQuote(id); return r ? json(res, 200, r) : json(res, 404, { error: 'não encontrado' }); }
       if (method === 'PUT') return json(res, 200, { id: saveQuote(db, id, await readJson(req, 64 * 1024)) });
       if (method === 'DELETE') return json(res, db.deleteQuote(id) ? 200 : 404, { ok: true });
+    }
+
+    // ---- Simulações dos clientes ----
+    if (pathname === '/api/leads' && method === 'GET') return json(res, 200, { items: db.listLeads(url.searchParams.get('limit')) });
+    const lm = pathname.match(/^\/api\/leads\/(\d+)$/);
+    if (lm) {
+      const id = Number(lm[1]);
+      if (method === 'GET') { const r = db.getLead(id); return r ? json(res, 200, r) : json(res, 404, { error: 'não encontrado' }); }
+      if (method === 'DELETE') return json(res, db.deleteLead(id) ? 200 : 404, { ok: true });
     }
 
     if (pathname === '/api/suggest' && method === 'GET') {

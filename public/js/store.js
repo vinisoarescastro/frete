@@ -54,7 +54,10 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('pagehide', () => { clearTimeout(timer); flush(); });
 
 /* Histórico de orçamentos */
-export const listQuotes = () => req('/quotes?limit=15');
+export const listQuotes = () => req('/quotes?limit=100');
 export const getQuote = id => req('/quotes/' + id);
 export const deleteQuote = id => req('/quotes/' + id, { method: 'DELETE' });
 export const saveQuote = (id, body) => req(id ? '/quotes/' + id : '/quotes', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
+export const listLeads = () => req('/leads?limit=200');
+export const getLead = id => req('/leads/' + id);
+export const deleteLead = id => req('/leads/' + id, { method: 'DELETE' });
