@@ -11,6 +11,9 @@ const DEFAULT_CENTER = [-16.6869, -49.2648];   // Goiânia, até a residência s
 export function initMap(){
   if (MAP || typeof L === 'undefined') return;
   MAP = L.map('map', { scrollWheelZoom: false }).setView(DEFAULT_CENTER, 12);
+  // Scroll dá zoom só depois de clicar no mapa; ao sair com o mouse, volta a rolar a página
+  MAP.on('click focus', () => MAP.scrollWheelZoom.enable());
+  MAP.on('mouseout blur', () => MAP.scrollWheelZoom.disable());
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(MAP);
   LAYER = L.featureGroup().addTo(MAP);
   MAP.on('click', e => handlers.onMapClick && handlers.onMapClick({ lat: e.latlng.lat, lon: e.latlng.lng }));
