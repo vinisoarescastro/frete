@@ -61,7 +61,7 @@ export function buildForms(){
     field('s', 'margin', 'Margem de lucro', { ...PC, hint: 'Lucro dividido pelo preço de venda.' }),
     field('s', 'tax', 'Taxas sobre a venda', { ...PC, hint: 'Impostos, em % do preço.' }),
     field('s', 'ratePerKm', 'Valor por km (Método 1)', { ...R$, suf: '/km' }),
-    field('s', 'minCharge', 'Valor mínimo por serviço', R$)
+    field('s', 'minCharge', 'Frete mínimo', R$)
   ].join('');
 
   $('#setEnd').innerHTML = [
@@ -85,13 +85,17 @@ export function buildForms(){
   $('#setDesp').innerHTML = [
     field('s', 'defTolls', 'Pedágios', R$), field('s', 'defParking', 'Estacionamento', R$),
     field('s', 'defFood', 'Alimentação', R$), field('s', 'defOther', 'Outras despesas', R$),
-    field('s', 'laborRate', 'Valor da hora de trabalho (mão de obra)', { ...R$, suf: '/h', cls: 'span2', hint: 'As horas são informadas em cada orçamento.' })
+    field('s', 'laborRate', 'Valor da hora de trabalho', { ...R$, suf: '/h', cls: 'span2' })
   ].join('');
   $('#setLucro').innerHTML = [
-    field('s', 'margin', 'Margem de lucro desejada', PC), field('s', 'tax', 'Taxas sobre a venda', PC),
-    field('s', 'minCharge', 'Valor mínimo por serviço', R$), field('s', 'ratePerKm', 'Valor padrão por km', { ...R$, suf: '/km' }),
-    field('s', 'cardFee', 'Taxa do cartão de crédito', { ...PC, cls: 'span2', hint: 'Acrescida ao valor no cartão: Pix dividido por (1 menos a taxa). Ajuste conforme sua maquininha.' }),
-    field('s', 'rounding', 'Arredondar valor sugerido para cima', { type: 'select', cls: 'span2', options: [['0', 'Não arredondar'], ['1', 'Próximo R$ 1'], ['5', 'Próximo R$ 5'], ['10', 'Próximo R$ 10']] })
+    field('s', 'minCharge', 'Frete mínimo', { ...R$, cls: 'span2', hint: 'Valor mais baixo que você aceita cobrar por um serviço.' }),
+    field('s', 'margin', 'Margem de lucro', PC),
+    field('s', 'ratePerKm', 'Valor por km', { ...R$, suf: '/km' })
+  ].join('');
+  $('#setLucroMais').innerHTML = [
+    field('s', 'tax', 'Taxas sobre a venda', PC),
+    field('s', 'cardFee', 'Taxa do cartão', { ...PC, hint: 'Acrescida ao valor no cartão.' }),
+    field('s', 'rounding', 'Arredondar para cima', { type: 'select', cls: 'span2', options: [['0', 'Não arredondar'], ['1', 'Próximo R$ 1'], ['5', 'Próximo R$ 5'], ['10', 'Próximo R$ 10']] })
   ].join('');
 }
 

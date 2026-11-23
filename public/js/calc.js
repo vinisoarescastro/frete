@@ -154,7 +154,8 @@ export function calculate(S, Q){
 
   const manualUsed = Q.manual !== '' && p.manual > 0;
   if (manualUsed && discAmt > 0) warnings.push('O preço manual substitui o valor sugerido; o desconto informado não é aplicado.');
-  const finalPrice = manualUsed ? round2(p.manual) : round2(suggested - discAmt);
+  const finalPrice = manualUsed ? round2(p.manual) : round2(Math.max(suggested - discAmt, Math.min(p.min, suggested)));
+  if (!manualUsed && discAmt > 0 && suggested - discAmt < p.min) warnings.push('O desconto foi limitado para respeitar o frete mínimo.');
   const fin = evalPrice(finalPrice);
 
   // ---- Avisos de negócio ----

@@ -177,10 +177,15 @@
     <span class="save-state" id="saveState" data-state="ok">Salvas automaticamente</span>
   </div>
   <div class="settings-grid">
+    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Preço e frete mínimo</h2><p class="ds-card__desc">Nenhum orçamento sai abaixo do frete mínimo.</p></div></div><div class="ds-card__body">
+      <div class="form-grid" id="setLucro"></div>
+      <details class="collapse"><summary>Mais opções</summary><div class="collapse__body"><div class="form-grid" id="setLucroMais"></div></div></details>
+    </div></section>
     <section class="ds-card"><div class="ds-card__header"><h2 class="ds-card__title">Seus dados</h2></div><div class="ds-card__body"><div class="form-grid" id="setEnd"></div></div></section>
-    <section class="ds-card"><div class="ds-card__header"><h2 class="ds-card__title">Veículo e combustível</h2></div><div class="ds-card__body"><div class="form-grid" id="setVei"></div></div></section>
-    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Custos por quilômetro</h2><p class="ds-card__desc">Deixe zerado o que não souber.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setKm"></div></div></section>
-    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Preço</h2><p class="ds-card__desc">Margem é o lucro dividido pelo preço de venda.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setLucro"></div></div></section>
+    <section class="ds-card"><div class="ds-card__header"><h2 class="ds-card__title">Veículo</h2></div><div class="ds-card__body">
+      <div class="form-grid" id="setVei"></div>
+      <details class="collapse"><summary>Custos por quilômetro</summary><div class="collapse__body"><p class="ds-help">Deixe zerado o que não souber.</p><div class="form-grid" id="setKm"></div></div></details>
+    </div></section>
     <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Despesas padrão</h2><p class="ds-card__desc">Valores iniciais de cada orçamento.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setDesp"></div></div></section>
   </div>
   <div><button class="ds-btn ds-btn--ghost ds-btn--sm ds-btn--danger-text" id="btnReset" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#trash-2"/></svg>Restaurar configurações padrão</button></div>
