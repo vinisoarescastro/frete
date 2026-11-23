@@ -29,7 +29,13 @@ async function geocode(addr, near){
   const noNum = full.replace(/\b\d+\b/g, '').replace(/(\s*,)+/g, ',').replace(/^,|,$/g, '').replace(/,/g, ', ').trim();
   const parts = full.split(',').map(x => x.trim());
   const short = parts.length > 3 ? [parts[0], ...parts.slice(-2)].join(', ') : full;
-  const variants = [[full, false], [noNum, true], [short, true]].filter((v, i, arr) => arr.findIndex(x => x[0] === v[0]) === i);
+  // Sem o tipo de via e sem códigos com número ("Rua OR2 Vila Redenção" vira "Vila Redenção"): acha o bairro
+  const [first, ...rest] = parts;
+  const area = first.split(' ').filter(w => !/^(rua|r\.?|avenida|av\.?|travessa|alameda|rodovia|estrada)$/i.test(w) && !/\d/.test(w)).join(' ').trim();
+  const byArea = area && area !== first ? [area, ...rest].join(', ') : '';
+  const city = rest.join(', ');   // último recurso: centro da cidade (o usuário arrasta o ponto)
+  const variants = [[full, false], [noNum, true], [short, true], [byArea, true], [city, true]]
+    .filter(v => v[0]).filter((v, i, arr) => arr.findIndex(x => x[0] === v[0]) === i);
   for (const [q, approx] of variants) {
     const qs = new URLSearchParams({ address: q });
     if (near) qs.set('near', `${near.lat},${near.lon}`);   // prefere resultados perto da residência
