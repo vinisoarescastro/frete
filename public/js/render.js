@@ -57,7 +57,7 @@ export function renderResults(res){
   if (!r) {
     $('#hero').innerHTML = `<div class="ds-card hero"><div class="hero__label">Valor a cobrar</div><div class="hero__price">R$ 0,00</div><p class="hero__note">Informe a coleta e a entrega para calcular.</p></div>`;
     $('#barPrice').textContent = 'Aguardando dados';
-    ['#mcards', '#kmTable', '#costTable'].forEach(s => $(s).innerHTML = '<p class="note">Aguardando dados válidos.</p>');
+    ['#kmTable', '#costTable'].forEach(s => $(s).innerHTML = '<p class="note">Aguardando dados válidos.</p>');
     return;
   }
   const f = r.fin;
@@ -72,14 +72,10 @@ export function renderResults(res){
     ${composition(r)}</div>`;
   $('#barPrice').textContent = brl(r.price);
 
-  // Escolha do método (cartões de opção do design system)
-  const option = (m, desc, disabled) => `<label class="ds-option"><input class="ds-option__input" type="radio" name="method" value="${m.id}" data-method="${m.id}" ${!r.auto && r.chosen.id === m.id ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span class="ds-option__text"><span class="ds-option__title">${METHOD_NAME[m.id]}</span><span class="ds-option__desc">${desc}</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>`;
-  const m1desc = r.m1.available
-    ? `Sugerido <b>${brl(r.m1.price)}</b>, margem ${pctf(r.m1.margin)}, lucro ${brl(r.m1.profit)}${Number.isFinite(r.reqRate) ? `. Valor por km para a margem desejada: ${brl(r.reqRate)}.` : ''}`
-    : `Informe o valor cobrado por km para usar este método.${Number.isFinite(r.reqRate) ? ` Para atingir a margem desejada: <b>${brl(r.reqRate)}/km</b>.` : ''}`;
-  const m2desc = `Sugerido <b>${brl(r.m2.price)}</b>${r.m2.minApplied ? ' (mínimo aplicado)' : ''}, margem ${pctf(r.m2.margin)}, lucro ${brl(r.m2.profit)}`;
-  const autoOpt = `<label class="ds-option"><input class="ds-option__input" type="radio" name="method" value="auto" data-method="auto" ${r.auto ? 'checked' : ''}><span class="ds-option__text"><span class="ds-option__title">Automático (mais vantajoso)</span><span class="ds-option__desc">Usa o método de maior valor. Agora: <b>${METHOD_NAME[r.chosen.id]}</b>.</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>`;
-  $('#mcards').innerHTML = autoOpt + option(r.m1, m1desc, !r.m1.available) + option(r.m2, m2desc, false);
+  // Método de cálculo: a escolha fica no seletor; aqui só uma linha de apoio
+  $('#methodHint').textContent = r.auto
+    ? `Usa o maior valor entre os dois métodos. Agora: ${METHOD_NAME[r.chosen.id]}.`
+    : (Q.method === '1' && !r.m1.available ? 'Informe o valor por km em Configurações para usar este método.' : `${METHOD_NAME[r.chosen.id]}.`);
 
   // Quilometragem
   const k = r.km, back = r.mode === 'roundtrip' ? 'Retorno à coleta' : 'Retornos intermediários';

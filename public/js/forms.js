@@ -57,12 +57,6 @@ export function buildForms(){
     field('q', 'discount', 'Desconto ao cliente'),
     field('q', 'manual', 'Preço final manual', { ...R$, cls: 'span2', hint: 'Substitui o valor sugerido. Lucro e margem são recalculados.' })
   ].join('');
-  $('#secPrecoMais').innerHTML = [
-    field('s', 'margin', 'Margem de lucro', { ...PC, hint: 'Lucro dividido pelo preço de venda.' }),
-    field('s', 'tax', 'Taxas sobre a venda', { ...PC, hint: 'Impostos, em % do preço.' }),
-    field('s', 'ratePerKm', 'Valor por km (Método 1)', { ...R$, suf: '/km' }),
-    field('s', 'minCharge', 'Frete mínimo', R$)
-  ].join('');
 
   $('#setEnd').innerHTML = [
     field('s', 'providerName', 'Seu nome ou empresa', { type: 'text' }),

@@ -55,10 +55,6 @@ document.addEventListener('click', e => {
   const rs = e.target.closest('[data-reset]');
   if (rs) { Q.touched[rs.closest('.drow').dataset.key] = false; update(); }
 });
-document.addEventListener('change', e => {
-  const mc = e.target.closest && e.target.closest('[data-method]');
-  if (mc && mc.checked) { Q.method = mc.dataset.method; update(); }
-});
 $('#btnDistManual').addEventListener('click', () => { Q.distManual = true; update(); $('[data-q="homePickup"]').focus(); });
 $('#btnWhats').addEventListener('click', sendWhatsApp);
 $('#barSend').addEventListener('click', sendWhatsApp);

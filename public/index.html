@@ -151,11 +151,19 @@
         <div class="ds-card__body">
           <div class="form-grid" id="secPreco"></div>
           <div><button class="ds-btn ds-btn--ghost ds-btn--sm" id="btnClearManual" type="button">Limpar preço manual</button></div>
-          <h3 class="sub-title">Método de cálculo</h3>
-          <div class="methods" id="mcards"></div>
-          <div class="form-grid" id="secPrecoMais"></div>
-          <h3 class="sub-title">Quilometragem</h3><div id="kmTable"></div>
-          <h3 class="sub-title">Custos e resultado</h3><div id="costTable"></div>
+          <div class="ds-field">
+            <span class="ds-label" id="lblMethod">Cálculo do valor</span>
+            <div class="ds-segmented seg" role="radiogroup" aria-labelledby="lblMethod">
+              <label class="ds-segmented__item"><input type="radio" name="method" data-q="method" value="auto">Automático</label>
+              <label class="ds-segmented__item"><input type="radio" name="method" data-q="method" value="1">Por km</label>
+              <label class="ds-segmented__item"><input type="radio" name="method" data-q="method" value="2">Custos e margem</label>
+            </div>
+            <p class="ds-help" id="methodHint"></p>
+          </div>
+          <details class="collapse">
+            <summary>Ver cálculo detalhado</summary>
+            <div class="collapse__body"><div id="kmTable"></div><div id="costTable"></div></div>
+          </details>
         </div>
       </details>
     </aside>
