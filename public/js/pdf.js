@@ -14,12 +14,14 @@ export function buildPdf(d){
 
   // Cabeçalho
   doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...INK);
-  doc.text(d.provider || 'Serviços de Frete', M, y + 5);
+  if (d.logo) doc.addImage(d.logo, 'PNG', M, y - 2, 36, 12.2);
+  else doc.text(d.provider || 'Serviços de Frete', M, y + 5);
   doc.setFontSize(14); doc.text('ORÇAMENTO DE FRETE', W - M, y + 5, { align: 'right' });
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...MUTED);
-  if (d.providerPhone) doc.text(d.providerPhone, M, y + 11);
+  if (d.logo) doc.text([d.provider, d.providerPhone].filter(Boolean).join('  |  '), M, y + 14);
+  else if (d.providerPhone) doc.text(d.providerPhone, M, y + 11);
   doc.text('Data: ' + d.issue, W - M, y + 11, { align: 'right' });
-  y += 15; doc.setDrawColor(...INK); doc.setLineWidth(0.6); doc.line(M, y, W - M, y); y += 8;
+  y += d.logo ? 18 : 15; doc.setDrawColor(...INK); doc.setLineWidth(0.6); doc.line(M, y, W - M, y); y += 8;
 
   // Tabela com título: linhas [rótulo, valor, estilo]
   const section = (title, rows, right) => {

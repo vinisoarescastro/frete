@@ -113,12 +113,20 @@ export function sendWhatsApp(){
   rememberQuote();
 }
 
+async function logoData(){
+  try {
+    const blob = await (await fetch('/assets/logo-fretes.png')).blob();
+    return await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(blob); });
+  } catch { return ''; }
+}
+
 /** Gera o PDF. No celular abre o menu de compartilhar (WhatsApp, e-mail...); no computador baixa o arquivo. */
 export async function savePdf(){
   if (!quoteReady()) return;
   if (!window.jspdf) { toast('Não foi possível gerar o PDF agora. Recarregue a página.', 'danger'); return; }
   try {
     const d = quoteData();
+    d.logo = await logoData();
     const base = (d.client || 'cliente').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'cliente';
     const file = new File([buildPdf(d)], `orcamento-${base}.pdf`, { type: 'application/pdf' });
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
