@@ -15,8 +15,8 @@ function refresh(){
   syncInputs();
   app.last = calculate(S, Q);
   renderRoute();
-  $('#btnConfirm').style.display = app.geo ? '' : 'none';
-  $('#btnConfirm').textContent = app.geo && app.geo.confirmed ? 'Recalcular distâncias' : 'Confirmar pontos e calcular distâncias';
+  $('#btnConfirm').hidden = !app.geo;
+  $('#btnConfirm').textContent = app.geo && app.geo.confirmed ? 'Recalcular distâncias' : 'Confirmar pontos e calcular';
   if (mapStale()) drawMap(false, onPinMoved);
   renderValidation(app.last);
   renderResults(app.last);
@@ -27,7 +27,7 @@ function refresh(){
 function showTab(name){
   $('#tab-calc').classList.toggle('hidden', name !== 'calc');
   $('#tab-set').classList.toggle('hidden', name !== 'set');
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   window.scrollTo(0, 0);
 }
 
@@ -45,6 +45,7 @@ document.addEventListener('keydown', e => {
 $('#btnGeo').addEventListener('click', locateAddresses);
 $('#btnConfirm').addEventListener('click', confirmRoutes);
 $('#btnCopy').addEventListener('click', () => copyQuote(true));
+$('#barCopy').addEventListener('click', () => copyQuote(true));
 $('#btnCopyPlain').addEventListener('click', () => copyQuote(false));
 $('#btnImg').addEventListener('click', saveImage);
 $('#btnPrint').addEventListener('click', () => printQuote(false));

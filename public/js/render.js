@@ -34,20 +34,25 @@ export function renderValidation(res){
    PAINEL DE RESULTADOS
    ========================================================= */
 export const MODE_NAME = { oneway: 'Somente ida', roundtrip: 'Ida e volta', multiple: 'Múltiplas viagens' };
-const METHOD_NAME = { '1': 'Método 1 · Preço por km', '2': 'Método 2 · Custos detalhados' };
+const METHOD_NAME = { '1': 'Método 1: preço por km', '2': 'Método 2: custos e margem' };
 
 export function renderResults(res){
   const r = res.r;
   if (!r) {
-    $('#hero').innerHTML = `<div class="hero"><div class="hl">Valor final a cobrar</div><div class="hv">Aguardando dados</div><div class="hs">Preencha os dados e corrija os avisos para ver o valor.</div></div>`;
+    $('#hero').innerHTML = `<div class="hero"><div class="hl">Valor a cobrar</div><div class="hv">R$ 0,00</div><div class="hs">Informe o trajeto e as distâncias para calcular.</div></div>`;
+    $('#barPrice').textContent = 'Aguardando dados';
     ['#mcards', '#kmTable', '#costTable'].forEach(s => $(s).innerHTML = '<p class="note">Aguardando dados válidos.</p>');
     return;
   }
   const f = r.fin, label = r.manualUsed ? 'Preço manual' : METHOD_NAME[r.chosen.id];
+  const notes = [esc(label), `sugerido ${brl(r.suggested)}`];
+  if (r.discAmt > 0 && !r.manualUsed) notes.push(`desconto ${brl(r.discAmt)}`);
+  if (r.diff !== 0) notes.push(`diferença ${r.diff > 0 ? '+' : ''}${brl(r.diff)} (${pctf(r.diffPct)})`);
   $('#hero').innerHTML = `<div class="hero ${f.profit < 0 ? 'loss' : ''}">
-    <div class="hl">Valor final a cobrar</div><div class="hv">${brl(r.price)}</div>
-    <div class="hs">${esc(label)} · sugerido ${brl(r.suggested)}${r.discAmt > 0 && !r.manualUsed ? ` · desconto ${brl(r.discAmt)}` : ''}${r.diff !== 0 ? ` · diferença ${r.diff > 0 ? '+' : ''}${brl(r.diff)} (${pctf(r.diffPct)})` : ''}</div>
+    <div class="hl">Valor a cobrar</div><div class="hv">${brl(r.price)}</div>
+    <div class="hs">${notes.join(', ')}</div>
     <div class="chips"><span class="chip">Lucro ${brl(f.profit)}</span><span class="chip">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="chip warn">Estimativa parcial</span>' : ''}</div></div>`;
+  $('#barPrice').textContent = brl(r.price);
 
   // Cartões de comparação
   const card = (m, extra) => {

@@ -74,7 +74,7 @@ export async function locateAddresses(){
   const log = (t, c = '') => { lines.push(`<span class="${c}">${t}</span>`); st.innerHTML = lines.join(''); };
   const fin = finalAddress();
   const need = [['Residência (Configurações)', S.home], ['Endereço de coleta', Q.pickup], ['Endereço de entrega', Q.delivery]];
-  if (Q.finalDest === 'other') need.push(['Endereço do retorno final', fin]);
+  if (Q.finalDest === 'other') need.push(['Endereço de destino final', fin]);
   const miss = need.filter(n => !String(n[1]).trim());
   if (miss.length) { st.innerHTML = `<span class="e">Preencha: ${miss.map(m => m[0]).join(', ')}.</span>`; return; }
 
@@ -83,7 +83,7 @@ export async function locateAddresses(){
     log('Localizando endereços...');
     const pt = {};
     const targets = [['home', 'Residência', S.home], ['pickup', 'Coleta', Q.pickup], ['delivery', 'Entrega', Q.delivery]];
-    if (Q.finalDest === 'other') targets.push(['final', 'Retorno final', fin]);
+    if (Q.finalDest === 'other') targets.push(['final', 'Destino final', fin]);
     let failed = 0;
     for (const [k, label, addr] of targets) {
       pt[k] = await geocode(addr.trim(), k === 'home' ? null : pt.home);
@@ -96,7 +96,7 @@ export async function locateAddresses(){
     else {
       app.geo = { pt, routes: {}, finalOther: Q.finalDest === 'other', confirmed: false };
       drawMap(false, onPinMoved);
-      log('Confira os pontos no mapa. Se algum estiver fora do lugar, arraste-o. Depois clique em "Confirmar pontos e calcular distâncias".', '');
+      log('Confira os pontos no mapa. Se algum estiver fora do lugar, arraste-o. Depois clique em "Confirmar pontos e calcular".', '');
     }
   } catch (e) {
     log('Não foi possível consultar o serviço de mapas (' + esc(e.message) + '). Preencha as distâncias manualmente.', 'e');
@@ -126,7 +126,7 @@ export async function onPinMoved(key, pos){
   const geo = app.geo;
   geo.pt[key] = { ...geo.pt[key], lat: pos.lat, lon: pos.lon, approx: false, name: 'ponto ajustado manualmente' };
   if (key === 'home' && !geo.finalOther) geo.pt.final = geo.pt.home;
-  if (!geo.confirmed) { $('#geoStatus').innerHTML = '<span class="o">Ponto ajustado. Clique em "Confirmar pontos e calcular distâncias" quando estiver correto.</span>'; return; }
+  if (!geo.confirmed) { $('#geoStatus').innerHTML = '<span class="o">Ponto ajustado. Clique em "Confirmar pontos e calcular" quando estiver correto.</span>'; return; }
   $('#geoStatus').innerHTML = '<span>Recalculando rotas...</span>';
   geo.routes = await computeRoutes(geo.pt, null);
   $('#geoStatus').innerHTML = '<span class="o">Ponto ajustado. Rotas e quilometragens recalculadas.</span>';

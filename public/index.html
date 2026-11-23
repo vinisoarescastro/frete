@@ -4,132 +4,167 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232457d6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 6h13v10H1zM14 10h4l4 4v2h-8z'/%3E%3Ccircle cx='6' cy='18' r='2'/%3E%3Ccircle cx='18' cy='18' r='2'/%3E%3C/svg%3E">
 <title>Calculadora de Fretes</title>
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
+<a class="skip" href="#main">Ir para o conteúdo</a>
 
 <header class="top">
   <div class="wrap">
-    <div class="logo"><i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h13v10H1zM14 10h4l4 4v2h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></i><span>Calculadora de Fretes</span></div>
-    <nav class="tabs" role="tablist">
-      <button class="on" data-tab="calc" role="tab">Orçamento</button>
-      <button data-tab="set" role="tab">Configurações</button>
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v10H1zM14 10h4l4 4v2h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      <span>Calculadora de Fretes</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Seções">
+      <button id="btn-calc" role="tab" aria-selected="true" aria-controls="tab-calc" data-tab="calc" type="button">Orçamento</button>
+      <button id="btn-set" role="tab" aria-selected="false" aria-controls="tab-set" data-tab="set" type="button">Configurações</button>
     </nav>
-    <form method="post" action="/logout" class="logout"><button type="submit" class="btn ghost">Sair</button></form>
+    <form method="post" action="/logout" class="logout"><button type="submit" class="btn ghost sm">Sair</button></form>
   </div>
 </header>
 
-<main class="wrap">
+<main id="main" class="wrap">
 
-<!-- =========================================================
-     ABA 1: ORÇAMENTO
-     ========================================================= -->
-<div id="tab-calc">
-  <div class="cols">
-
-    <!-- Coluna esquerda: entradas -->
+<!-- ORÇAMENTO -->
+<div id="tab-calc" role="tabpanel" aria-labelledby="btn-calc">
+  <div class="toolbar">
     <div>
-      <section class="card">
-        <h2><span class="n">1</span> Dados do frete</h2>
-        <p class="sub">Informações do cliente e do serviço.</p>
+      <h1>Novo orçamento</h1>
+      <p>Preencha o trajeto e o valor aparece ao lado.</p>
+    </div>
+    <button class="btn danger sm" id="btnNew" type="button">Limpar tudo</button>
+  </div>
+
+  <div class="layout">
+
+    <!-- Entradas -->
+    <div class="flow">
+      <section class="card" aria-labelledby="h-cliente">
+        <div class="card-h"><span class="step" aria-hidden="true">1</span><div><h2 id="h-cliente">Cliente e serviço</h2></div></div>
         <div class="grid" id="secDados"></div>
+        <details class="more">
+          <summary>Descrição e observações</summary>
+          <div class="body"><div class="grid" id="secDadosMais"></div></div>
+        </details>
       </section>
 
-      <section class="card">
-        <h2><span class="n">2</span> Modalidade e rota</h2>
-        <p class="sub">Escolha como o serviço será feito. Os deslocamentos são calculados sem duplicar trechos.</p>
-        <div class="modes">
-          <label class="mode"><input type="radio" name="mode" data-q="mode" value="oneway"><b>Somente ida</b><span>Coleta para entrega, sem retorno à coleta</span></label>
-          <label class="mode"><input type="radio" name="mode" data-q="mode" value="roundtrip"><b>Ida e volta</b><span>Coleta para entrega para coleta</span></label>
-          <label class="mode"><input type="radio" name="mode" data-q="mode" value="multiple"><b>Múltiplas viagens</b><span>Várias idas entre coleta e entrega</span></label>
-        </div>
-        <div class="grid">
+      <section class="card" aria-labelledby="h-trajeto">
+        <div class="card-h"><span class="step" aria-hidden="true">2</span><div><h2 id="h-trajeto">Trajeto</h2><p>Informe os endereços e a modalidade.</p></div></div>
+        <div class="grid" id="secEnd"></div>
+
+        <fieldset class="modes">
+          <legend class="lbl">Modalidade</legend>
+          <div class="modes-row">
+            <label class="mode"><input type="radio" name="mode" data-q="mode" value="oneway"><b>Somente ida</b><span>Coleta, entrega e fim</span></label>
+            <label class="mode"><input type="radio" name="mode" data-q="mode" value="roundtrip"><b>Ida e volta</b><span>Entrega e volta à coleta</span></label>
+            <label class="mode"><input type="radio" name="mode" data-q="mode" value="multiple"><b>Várias viagens</b><span>Mais de uma ida</span></label>
+          </div>
+        </fieldset>
+        <div class="grid route-fields">
           <div id="tripsBox" class="hidden"></div>
           <div id="finalBox"></div>
           <div id="finalAddrBox" class="span2 hidden"></div>
         </div>
 
-        <div class="actions" style="margin-top:14px">
-          <button class="btn" id="btnGeo" type="button">Localizar endereços no mapa</button>
-          <button class="btn" id="btnConfirm" type="button" style="display:none">Confirmar pontos e calcular distâncias</button>
+        <div class="actions route-actions">
+          <button class="btn" id="btnGeo" type="button">Localizar no mapa</button>
+          <button class="btn ghost" id="btnConfirm" type="button" hidden>Confirmar pontos e calcular</button>
         </div>
         <div class="status" id="geoStatus" aria-live="polite"></div>
-        <p class="note" id="geoNote">Passo 1: localize os endereços e confira os pontos no mapa. Passo 2: confirme para calcular as distâncias. Usa OpenStreetMap (Nominatim) e OSRM, sem chave de API. Os endereços digitados são enviados a esses serviços públicos. Se falhar, preencha as distâncias manualmente. Elas sempre podem ser editadas.</p>
+        <p class="note" id="geoNote">Localize os endereços, confira os pontos no mapa e confirme para calcular as distâncias. Os endereços são enviados ao serviço de mapas. Você também pode digitar as distâncias manualmente.</p>
 
-        <div id="mapBox" class="hidden"><div id="map"></div><div class="legend" id="mapLegend"></div></div>
+        <div id="mapBox" class="hidden"><div id="map" role="application" aria-label="Mapa do trajeto"></div><div class="legend" id="mapLegend"></div></div>
 
+        <h3 class="sub-h">Distâncias</h3>
         <div class="drows" id="dRows"></div>
       </section>
 
-      <section class="card">
-        <h2><span class="n">3</span> Despesas deste serviço</h2>
-        <p class="sub">Começam com os padrões das Configurações e podem ser ajustadas neste orçamento.</p>
-        <div class="grid" id="secDesp"></div>
-        <div class="actions" style="margin-top:12px"><button class="btn ghost" id="btnDefaults" type="button">Usar valores padrão</button></div>
-      </section>
+      <details class="card">
+        <summary class="card-sum">
+          <span class="step" aria-hidden="true">3</span><span class="t1">Despesas e horas</span><span class="t2">Opcional</span>
+        </summary>
+        <div class="body">
+          <p class="note lead">Começam com os valores padrão das Configurações e valem só para este orçamento.</p>
+          <div class="grid" id="secDesp"></div>
+          <div class="actions mt"><button class="btn ghost sm" id="btnDefaults" type="button">Usar valores padrão</button></div>
+        </div>
+      </details>
     </div>
 
-    <!-- Coluna direita: resultados -->
-    <div class="sticky">
-      <div id="hero"></div>
-      <div id="alerts" class="alerts"></div>
+    <!-- Resumo -->
+    <aside class="side" aria-label="Resumo do orçamento">
+      <div id="alerts" class="alerts" aria-live="polite"></div>
+      <div id="hero" aria-live="polite"></div>
 
       <section class="card">
-        <h2>Preço, margem e ajuste</h2>
-        <p class="sub">Margem calculada <b>sobre o preço de venda</b>.</p>
+        <div class="actions">
+          <button class="btn grow" id="btnCopy" type="button">Copiar para WhatsApp</button>
+          <button class="btn ghost sm" id="btnCopyPlain" type="button">Texto simples</button>
+          <button class="btn ghost sm" id="btnImg" type="button">Imagem</button>
+          <button class="btn ghost sm" id="btnPdf" type="button">PDF</button>
+          <button class="btn ghost sm" id="btnPrint" type="button">Imprimir</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="sec-t">Ajustar preço</h2>
         <div class="grid" id="secPreco"></div>
-        <div class="actions" style="margin-top:12px"><button class="btn ghost" id="btnClearManual" type="button">Limpar preço manual</button></div>
+        <div class="actions mt"><button class="btn ghost sm" id="btnClearManual" type="button">Limpar preço manual</button></div>
+        <details class="more">
+          <summary>Método, margem e valor mínimo</summary>
+          <div class="body">
+            <h3 class="sec-t">Método de cálculo</h3>
+            <div class="mcards" id="mcards"></div>
+            <p class="note">Os dois usam os mesmos custos reais. O Método 1 cobra por km rodado; o Método 2 usa o custo mais a margem desejada.</p>
+            <h3 class="sec-t">Parâmetros</h3>
+            <div class="grid" id="secPrecoMais"></div>
+          </div>
+        </details>
       </section>
 
-      <section class="card">
-        <h2>Comparação dos métodos</h2>
-        <p class="sub">Clique no método que será usado para o orçamento.</p>
-        <div class="mcards" id="mcards"></div>
-        <p class="note">Os dois métodos usam os mesmos custos reais (combustível, desgaste, despesas); diferem em <b>como o preço é formado</b>: por valor/km cobrado (Método 1) ou por custo + margem (Método 2).</p>
-      </section>
-
-      <section class="card"><h2>Composição da quilometragem</h2><div id="kmTable"></div></section>
-      <section class="card"><h2>Custos e resultado</h2><div id="costTable"></div></section>
-    </div>
+      <details class="card">
+        <summary class="card-sum">
+          <span class="t1">Detalhes do cálculo</span><span class="t2">Km, custos e lucro</span>
+        </summary>
+        <div class="body">
+          <h3 class="sec-t">Quilometragem</h3><div id="kmTable"></div>
+          <h3 class="sec-t">Custos e resultado</h3><div id="costTable"></div>
+        </div>
+      </details>
+    </aside>
   </div>
 
-  <section class="card" style="margin-top:4px">
-    <h2>Orçamento para o cliente</h2>
-    <p class="sub">Não exibe custos, margem nem lucro.</p>
-    <div class="actions" style="margin-bottom:14px">
-      <button class="btn" id="btnCopy" type="button">Copiar para WhatsApp</button>
-      <button class="btn ghost" id="btnCopyPlain" type="button">Copiar texto simples</button>
-      <button class="btn ghost" id="btnImg" type="button">Salvar como imagem</button>
-      <button class="btn ghost" id="btnPrint" type="button">Imprimir</button>
-      <button class="btn ghost" id="btnPdf" type="button">Salvar em PDF</button>
-      <button class="btn danger" id="btnNew" type="button" style="margin-left:auto">Novo orçamento</button>
-    </div>
+  <section class="card mt-gap" aria-labelledby="h-prev">
+    <div class="card-h"><div><h2 id="h-prev">Orçamento para o cliente</h2><p>Não mostra custos, margem nem lucro.</p></div></div>
     <div class="qwrap" id="quotePreview"></div>
   </section>
 </div>
 
-<!-- =========================================================
-     ABA 2: CONFIGURAÇÕES
-     ========================================================= -->
-<div id="tab-set" class="hidden">
-  <div style="margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <h2 style="font-size:20px">Configurações</h2><span class="saved">Salvas automaticamente neste navegador</span>
-  </div>
-  <div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
-    <section class="card"><h2>Endereço e prestador</h2><p class="sub">O endereço residencial é o ponto de partida e de retorno.</p><div class="grid" id="setEnd"></div></section>
-    <section class="card"><h2>Veículo</h2><p class="sub">Consumo médio considerando o carro <b>com a carretinha</b>.</p><div class="grid" id="setVei"></div></section>
-    <section class="card"><h2>Custos por quilômetro</h2><p class="sub">Deixe zerado o que não souber. O app avisará que a estimativa de lucro é parcial.</p><div class="grid" id="setKm"></div></section>
-    <section class="card"><h2>Despesas padrão por serviço</h2><p class="sub">Valores iniciais de cada novo orçamento.</p><div class="grid" id="setDesp"></div></section>
-    <section class="card"><h2>Lucro e precificação</h2><p class="sub">Margem = lucro ÷ preço de venda (não é acréscimo sobre o custo).</p><div class="grid" id="setLucro"></div></section>
-    <section class="card"><h2>Dados</h2><p class="sub">Tudo fica salvo no localStorage do navegador.</p>
+<!-- CONFIGURAÇÕES -->
+<div id="tab-set" class="hidden" role="tabpanel" aria-labelledby="btn-set">
+  <div class="page-h"><h1>Configurações</h1><span class="saved">Salvas automaticamente neste navegador.</span></div>
+  <div class="settings">
+    <section class="card"><div class="card-h"><div><h2>Endereço e prestador</h2><p>A residência é o ponto de partida e de retorno.</p></div></div><div class="grid" id="setEnd"></div></section>
+    <section class="card"><div class="card-h"><div><h2>Veículo</h2><p>Consumo médio com o carro e a carretinha.</p></div></div><div class="grid" id="setVei"></div></section>
+    <section class="card"><div class="card-h"><div><h2>Custos por quilômetro</h2><p>Deixe zerado o que não souber. O lucro será uma estimativa parcial.</p></div></div><div class="grid" id="setKm"></div></section>
+    <section class="card"><div class="card-h"><div><h2>Despesas padrão</h2><p>Valores iniciais de cada novo orçamento.</p></div></div><div class="grid" id="setDesp"></div></section>
+    <section class="card"><div class="card-h"><div><h2>Lucro e preço</h2><p>Margem é o lucro dividido pelo preço de venda.</p></div></div><div class="grid" id="setLucro"></div></section>
+    <section class="card"><div class="card-h"><div><h2>Dados</h2><p>Tudo fica salvo no navegador deste aparelho.</p></div></div>
       <div class="actions"><button class="btn danger" id="btnReset" type="button">Restaurar configurações padrão</button></div></section>
   </div>
 </div>
 
 <footer>Estimativas baseadas nos valores informados. Confira distâncias e custos antes de fechar o serviço.</footer>
 </main>
+
+<div class="bar" id="bar">
+  <div class="bt"><div class="bl">Valor a cobrar</div><div class="bv" id="barPrice">Aguardando</div></div>
+  <button class="btn" id="barCopy" type="button">Copiar</button>
+</div>
 
 <div id="printArea"></div>
 <div id="toast" class="toast hidden" role="status"></div>

@@ -10,60 +10,66 @@ export function field(scope, key, label, o = {}){
   if (type === 'textarea') input = `<textarea ${attr}="${key}" rows="${o.rows || 2}" placeholder="${o.ph || ''}"></textarea>`;
   else if (type === 'select') input = `<select ${attr}="${key}">${o.options.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>`;
   else input = `<input ${attr}="${key}" type="${type}" ${type === 'number' ? 'step="any" inputmode="decimal"' : ''} placeholder="${o.ph || ''}" autocomplete="off">`;
-  const hint = o.hint ? `<i title="${o.hint}">?</i>` : '';
-  return `<label class="f ${o.cls || ''}"><span class="lbl">${label}${hint}</span><div class="inp">${o.pre ? `<span class="ad">${o.pre}</span>` : ''}${input}${o.suf ? `<span class="ad">${o.suf}</span>` : ''}</div><small class="msg"></small></label>`;
+  const hint = o.hint ? `<small class="hint">${o.hint}</small>` : '';
+  return `<label class="f ${o.cls || ''}"><span class="lbl">${label}</span><div class="inp">${o.pre ? `<span class="ad">${o.pre}</span>` : ''}${input}${o.suf ? `<span class="ad">${o.suf}</span>` : ''}</div>${hint}<small class="msg"></small></label>`;
 }
 const R$ = { pre: 'R$' }, KM = { suf: 'km' }, PC = { suf: '%' };
 
 export function buildForms(){
   $('#secDados').innerHTML = [
-    field('q', 'clientName', 'Nome do cliente (opcional)', { type: 'text' }),
-    field('q', 'clientPhone', 'Telefone (opcional)', { type: 'tel' }),
+    field('q', 'clientName', 'Nome do cliente', { type: 'text' }),
+    field('q', 'clientPhone', 'Telefone', { type: 'tel' }),
     field('q', 'serviceType', 'Tipo de serviço', { type: 'select', options: ['Frete', 'Entrega', 'Mudança', 'Transporte de mercadorias', 'Outros'].map(x => [x, x]) }),
-    field('q', 'date', 'Data prevista do serviço', { type: 'date' }),
+    field('q', 'date', 'Data prevista', { type: 'date' })
+  ].join('');
+  $('#secDadosMais').innerHTML = [
+    field('q', 'desc', 'Descrição da carga ou serviço', { type: 'textarea', cls: 'span2' }),
+    field('q', 'notes', 'Observações para o cliente', { type: 'textarea', cls: 'span2' })
+  ].join('');
+  $('#secEnd').innerHTML = [
     field('q', 'pickup', 'Endereço de coleta', { type: 'text', cls: 'span2', ph: 'Rua, número, bairro, cidade' }),
-    field('q', 'delivery', 'Endereço de entrega', { type: 'text', cls: 'span2', ph: 'Rua, número, bairro, cidade' }),
-    field('q', 'desc', 'Descrição da carga ou serviço (opcional)', { type: 'textarea', cls: 'span2' }),
-    field('q', 'notes', 'Observações adicionais (opcional)', { type: 'textarea', cls: 'span2' })
+    field('q', 'delivery', 'Endereço de entrega', { type: 'text', cls: 'span2', ph: 'Rua, número, bairro, cidade' })
   ].join('');
 
-  $('#tripsBox').innerHTML = field('q', 'trips', 'Quantidade de viagens de ida', { suf: 'viagens', hint: 'Cada viagem leva carga da coleta à entrega. Entre elas há retorno à coleta.' });
-  $('#finalBox').innerHTML = field('q', 'finalDest', 'Retorno final', { type: 'select', options: [['home', 'Para minha residência'], ['other', 'Para outro endereço']] });
-  $('#finalAddrBox').innerHTML = field('q', 'finalAddr', 'Endereço do retorno final', { type: 'text' });
+  $('#tripsBox').innerHTML = field('q', 'trips', 'Viagens de ida', { suf: 'viagens', hint: 'Entre as viagens o veículo volta à coleta.' });
+  $('#finalBox').innerHTML = field('q', 'finalDest', 'Depois da entrega, voltar para', { type: 'select', options: [['home', 'Minha residência'], ['other', 'Outro endereço']] });
+  $('#finalAddrBox').innerHTML = field('q', 'finalAddr', 'Endereço de destino final', { type: 'text' });
 
   const rows = [
-    ['homePickup', 'Residência para coleta', 'always'],
-    ['pickupDelivery', 'Coleta para entrega (cada viagem de ida)', 'always'],
-    ['deliveryPickup', 'Entrega para coleta (retorno)', 'roundtrip,multiple'],
-    ['deliveryFinal', 'Entrega para retorno final', 'oneway,multiple'],
-    ['pickupFinal', 'Coleta para retorno final', 'roundtrip']
+    ['homePickup', 'Residência até a coleta', 'always'],
+    ['pickupDelivery', 'Coleta até a entrega (cada ida)', 'always'],
+    ['deliveryPickup', 'Entrega até a coleta (volta)', 'roundtrip,multiple'],
+    ['deliveryFinal', 'Entrega até o destino final', 'oneway,multiple'],
+    ['pickupFinal', 'Coleta até o destino final', 'roundtrip']
   ];
   $('#dRows').innerHTML = rows.map(([k, l, m]) =>
-    `<div class="drow" data-key="${k}" data-modes="${m}">${field('q', k, `<span data-lbl>${l}</span>`, { ...KM, ph: '0' })}<div class="dx"><span class="tag" data-tag></span><button class="mini hidden" type="button" data-reset title="Voltar a copiar o trecho de ida">Restaurar</button><a class="lnk hidden" target="_blank" rel="noopener" data-map>Ver no Maps</a></div></div>`).join('');
+    `<div class="drow" data-key="${k}" data-modes="${m}">${field('q', k, `<span data-lbl>${l}</span>`, { ...KM, ph: '0' })}<div class="dx"><span class="tag" data-tag></span><button class="mini hidden" type="button" data-reset title="Voltar a copiar o trecho inverso">Restaurar</button><a class="lnk hidden" target="_blank" rel="noopener" data-map>Ver no Maps</a></div></div>`).join('');
 
   $('#secDesp').innerHTML = [
     field('q', 'tolls', 'Pedágios', R$), field('q', 'parking', 'Estacionamento', R$),
     field('q', 'food', 'Alimentação', R$), field('q', 'otherExp', 'Outras despesas (ajudante, etc.)', R$),
-    field('q', 'hours', 'Horas estimadas de trabalho', { suf: 'h', hint: 'Multiplicadas pelo valor/hora (Configurações) e somadas ao custo como mão de obra.' }),
-    field('s', 'laborRate', 'Valor da hora de trabalho', { ...R$, suf: '/h' }),
+    field('q', 'hours', 'Horas de trabalho', { suf: 'h', hint: 'Multiplicadas pelo valor da hora e somadas ao custo.' }),
+    field('s', 'laborRate', 'Valor da hora', { ...R$, suf: '/h' }),
     field('q', 'fuel', 'Combustível deste serviço', { type: 'select', cls: 'span2', options: [['', 'Padrão das Configurações'], ['gasolina', 'Gasolina'], ['etanol', 'Etanol']] })
   ].join('');
 
   $('#secPreco').innerHTML = [
-    field('s', 'margin', 'Margem de lucro desejada', { ...PC, hint: 'Margem sobre o preço de venda: lucro ÷ preço.' }),
-    field('s', 'tax', 'Taxas sobre a venda (opcional)', { ...PC, hint: 'Impostos/taxa de cartão, em % do preço.' }),
-    field('s', 'ratePerKm', 'Valor cobrado por km (Método 1)', { ...R$, suf: '/km' }),
-    field('s', 'minCharge', 'Valor mínimo por serviço', R$),
     field('q', 'discType', 'Tipo de desconto', { type: 'select', options: [['pct', 'Percentual (%)'], ['val', 'Valor (R$)']] }),
     field('q', 'discount', 'Desconto ao cliente'),
-    field('q', 'manual', 'Preço final manual (opcional)', { ...R$, cls: 'span2', hint: 'Substitui o valor sugerido. Lucro e margem são recalculados.' })
+    field('q', 'manual', 'Preço final manual', { ...R$, cls: 'span2', hint: 'Substitui o valor sugerido. Lucro e margem são recalculados.' })
+  ].join('');
+  $('#secPrecoMais').innerHTML = [
+    field('s', 'margin', 'Margem de lucro', { ...PC, hint: 'Lucro dividido pelo preço de venda.' }),
+    field('s', 'tax', 'Taxas sobre a venda', { ...PC, hint: 'Impostos, em % do preço.' }),
+    field('s', 'ratePerKm', 'Valor por km (Método 1)', { ...R$, suf: '/km' }),
+    field('s', 'minCharge', 'Valor mínimo por serviço', R$)
   ].join('');
 
   $('#setEnd').innerHTML = [
-    field('s', 'home', 'Endereço residencial (partida e retorno)', { type: 'text', cls: 'span2' }),
-    field('s', 'providerName', 'Seu nome / empresa (aparece no orçamento)', { type: 'text' }),
-    field('s', 'providerPhone', 'Seu telefone (aparece no orçamento)', { type: 'tel' }),
-    field('s', 'validityDays', 'Validade do orçamento (dias)', { suf: 'dias' })
+    field('s', 'home', 'Endereço residencial', { type: 'text', cls: 'span2', hint: 'Ponto de partida e de retorno.' }),
+    field('s', 'providerName', 'Seu nome ou empresa', { type: 'text' }),
+    field('s', 'providerPhone', 'Seu telefone', { type: 'tel' }),
+    field('s', 'validityDays', 'Validade do orçamento', { suf: 'dias' })
   ].join('');
   $('#setVei').innerHTML = [
     field('s', 'vehicleType', 'Tipo de veículo', { type: 'text' }),
@@ -83,9 +89,9 @@ export function buildForms(){
     field('s', 'laborRate', 'Valor da hora de trabalho (mão de obra)', { ...R$, suf: '/h', cls: 'span2', hint: 'As horas são informadas em cada orçamento.' })
   ].join('');
   $('#setLucro').innerHTML = [
-    field('s', 'margin', 'Margem de lucro desejada', PC), field('s', 'tax', 'Taxas sobre a venda (opcional)', PC),
+    field('s', 'margin', 'Margem de lucro desejada', PC), field('s', 'tax', 'Taxas sobre a venda', PC),
     field('s', 'minCharge', 'Valor mínimo por serviço', R$), field('s', 'ratePerKm', 'Valor padrão por km', { ...R$, suf: '/km' }),
-    field('s', 'cardFee', 'Taxa do cartão de crédito (estimativa)', { ...PC, cls: 'span2', hint: 'Acrescida ao valor no orçamento do cartão: Pix dividido por (1 menos a taxa). Ajuste conforme sua maquininha.' }),
+    field('s', 'cardFee', 'Taxa do cartão de crédito', { ...PC, cls: 'span2', hint: 'Acrescida ao valor no cartão: Pix dividido por (1 menos a taxa). Ajuste conforme sua maquininha.' }),
     field('s', 'rounding', 'Arredondar valor sugerido para cima', { type: 'select', cls: 'span2', options: [['0', 'Não arredondar'], ['1', 'Próximo R$ 1'], ['5', 'Próximo R$ 5'], ['10', 'Próximo R$ 10']] })
   ].join('');
 }
@@ -137,8 +143,8 @@ export function renderRoute(){
   document.querySelectorAll('.drow').forEach(row => {
     const k = row.dataset.key, modes = row.dataset.modes;
     row.classList.toggle('hidden', !(modes === 'always' || modes.split(',').includes(mode)));
-    if (k === 'deliveryFinal') row.querySelector('[data-lbl]').textContent = `Entrega para retorno final (${finLabel})`;
-    if (k === 'pickupFinal') row.querySelector('[data-lbl]').textContent = `Coleta para retorno final (${finLabel})`;
+    if (k === 'deliveryFinal') row.querySelector('[data-lbl]').textContent = `Entrega até o destino final (${finLabel})`;
+    if (k === 'pickupFinal') row.querySelector('[data-lbl]').textContent = `Coleta até o destino final (${finLabel})`;
     const mirrored = MIRROR_KEYS.includes(k) && !Q.touched[k] && (k === 'deliveryPickup' || Q.finalDest === 'home');
     const tag = row.querySelector('[data-tag]');
     tag.textContent = mirrored ? 'igual ao trecho inverso' : (Q.touched[k] ? 'manual' : '');

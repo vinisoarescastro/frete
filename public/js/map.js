@@ -27,11 +27,11 @@ export function drawMap(keepView, onPinMoved){
   const { pt, routes } = geo;
   const returns = Q.mode === 'roundtrip' ? 1 : (Q.mode === 'multiple' ? Math.max(num(Q.trips) - 1, 0) : 0);
   const legs = [
-    ['homePickup', 'Residência para coleta', '#7a8aa6', 4, null],
-    ['pickupDelivery', 'Coleta para entrega (ida)', '#0b5fff', 6, null]
+    ['homePickup', 'Residência até a coleta', '#7a8aa6', 4, null],
+    ['pickupDelivery', 'Coleta até a entrega (ida)', '#0b5fff', 6, null]
   ];
-  if (returns > 0) legs.push(['deliveryPickup', 'Entrega para coleta (retorno)', '#f59e0b', 4, '8 8']);
-  legs.push(Q.mode === 'roundtrip' ? ['pickupFinal', 'Coleta para retorno final', '#0f9d58', 4, null] : ['deliveryFinal', 'Entrega para retorno final', '#0f9d58', 4, null]);
+  if (returns > 0) legs.push(['deliveryPickup', 'Entrega até a coleta (volta)', '#f59e0b', 4, '8 8']);
+  legs.push(Q.mode === 'roundtrip' ? ['pickupFinal', 'Coleta até o destino final', '#0f9d58', 4, null] : ['deliveryFinal', 'Entrega até o destino final', '#0f9d58', 4, null]);
 
   const items = [];
   legs.forEach(([k, name, color, w, dash]) => {
@@ -41,7 +41,7 @@ export function drawMap(keepView, onPinMoved){
   });
 
   const pins = [['R', 'Residência', pt.home, 'home'], ['C', 'Coleta', pt.pickup, 'pickup'], ['E', 'Entrega', pt.delivery, 'delivery']];
-  if (geo.finalOther) pins.push(['F', 'Retorno final', pt.final, 'final']);
+  if (geo.finalOther) pins.push(['F', 'Destino final', pt.final, 'final']);
   pins.forEach(([t, name, p, key]) => {
     if (!p) return;
     L.marker([p.lat, p.lon], { draggable: true, icon: L.divIcon({ className: '', html: `<div class="pin">${t}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] }) })
@@ -50,7 +50,7 @@ export function drawMap(keepView, onPinMoved){
       .addTo(LAYER);
   });
 
-  $('#mapLegend').innerHTML = items.join('') + '<span>' + (geo.confirmed ? '' : 'Aguardando sua confirmação. ') + 'Pontos arrastáveis: R residência, C coleta, E entrega' + (geo.finalOther ? ', F retorno final' : '') + '</span>';
+  $('#mapLegend').innerHTML = items.join('') + '<span>' + (geo.confirmed ? '' : 'Aguardando sua confirmação. ') + 'Pontos arrastáveis: R residência, C coleta, E entrega' + (geo.finalOther ? ', F destino final' : '') + '</span>';
   setTimeout(() => {
     MAP.invalidateSize();
     const b = LAYER.getBounds(); if (!keepView && b.isValid()) MAP.fitBounds(b, { padding: [24, 24] });
