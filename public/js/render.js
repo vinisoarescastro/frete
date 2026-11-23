@@ -35,6 +35,21 @@ export function renderValidation(res){
 export const MODE_NAME = { oneway: 'Somente ida', roundtrip: 'Ida e volta', multiple: 'Múltiplas viagens' };
 const METHOD_NAME = { '1': 'Método 1: preço por km', '2': 'Método 2: custos e margem' };
 
+/* Composição do valor cobrado: para onde vai cada real do preço */
+function composition(r){
+  const c = r.c, f = r.fin;
+  const items = [
+    ['Combustível', c.fuel],
+    ['Manutenção e desgaste', c.maint + c.tires + c.deprec + c.otherKm],
+    ['Pedágios e despesas', c.reimb],
+    ['Mão de obra', c.labor],
+    ['Taxas sobre a venda', f.taxes],
+    [f.profit < 0 ? 'Prejuízo' : 'Lucro', f.profit, true]
+  ].filter(([, v]) => Math.abs(v) >= 0.005);
+  const rows = items.map(([l, v, strong]) => `<li class="${strong ? 'is-profit' : ''}"><span>${l}</span><span>${brl(v)}</span><span class="pc">${r.price > 0 ? pctf(v / r.price * 100) : ''}</span></li>`).join('');
+  return `<ul class="kpi-comp" aria-label="Composição do valor">${rows}</ul>`;
+}
+
 export function renderResults(res){
   const r = res.r;
   if (!r) {
@@ -51,7 +66,8 @@ export function renderResults(res){
     <div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div>
     <div class="ds-kpi__main"><span class="t-value">${brl(r.price)}</span></div>
     ${notes.length ? `<div class="kpi-notes">${notes.join(', ')}</div>` : ''}
-    <div class="kpi-chips"><span class="ds-trend">Lucro ${brl(f.profit)}</span><span class="ds-trend">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="ds-trend">Estimativa parcial</span>' : ''}</div></div>`;
+    <div class="kpi-chips"><span class="ds-trend">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="ds-trend">Estimativa parcial</span>' : ''}</div>
+    ${composition(r)}</div>`;
   $('#barPrice').textContent = brl(r.price);
 
   // Escolha do método (cartões de opção do design system)
