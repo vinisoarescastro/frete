@@ -39,21 +39,23 @@ const METHOD_NAME = { '1': 'Método 1: preço por km', '2': 'Método 2: custos e
 function composition(r){
   const c = r.c, f = r.fin;
   const items = [
-    ['Combustível', c.fuel],
-    ['Manutenção e desgaste', c.maint + c.tires + c.deprec + c.otherKm],
-    ['Pedágios e despesas', c.reimb],
-    ['Mão de obra', c.labor],
-    ['Taxas sobre a venda', f.taxes],
-    [f.profit < 0 ? 'Prejuízo' : 'Lucro', f.profit, true]
+    ['Combustível', c.fuel, 'c1'],
+    ['Manutenção e desgaste', c.maint + c.tires + c.deprec + c.otherKm, 'c2'],
+    ['Pedágios e despesas', c.reimb, 'c3'],
+    ['Mão de obra', c.labor, 'c4'],
+    ['Taxas sobre a venda', f.taxes, 'c5'],
+    [f.profit < 0 ? 'Prejuízo' : 'Lucro', f.profit, f.profit < 0 ? 'loss' : 'profit']
   ].filter(([, v]) => Math.abs(v) >= 0.005);
-  const rows = items.map(([l, v, strong]) => `<li class="${strong ? 'is-profit' : ''}"><span>${l}</span><span>${brl(v)}</span><span class="pc">${r.price > 0 ? pctf(v / r.price * 100) : ''}</span></li>`).join('');
-  return `<ul class="kpi-comp" aria-label="Composição do valor">${rows}</ul>`;
+  const pos = items.filter(([, v]) => v > 0), tot = pos.reduce((a, [, v]) => a + v, 0) || 1;
+  const bar = pos.map(([l, v, k]) => `<span class="seg-${k}" style="flex:${(v / tot).toFixed(4)}" title="${l}"></span>`).join('');
+  const rows = items.map(([l, v, k]) => `<li><span class="dot seg-${k}"></span><span class="lb">${l}</span><span class="vl">${brl(v)}</span><span class="pc">${r.price > 0 ? pctf(v / r.price * 100) : ''}</span></li>`).join('');
+  return `<div class="hero-bar" aria-hidden="true">${bar}</div><ul class="hero-comp" aria-label="Composição do valor">${rows}</ul>`;
 }
 
 export function renderResults(res){
   const r = res.r;
   if (!r) {
-    $('#hero').innerHTML = `<div class="ds-card ds-card--gradient ds-kpi"><div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div><div class="ds-kpi__main"><span class="t-value">R$ 0,00</span></div><div class="kpi-notes">Informe a coleta e a entrega para calcular.</div></div>`;
+    $('#hero').innerHTML = `<div class="ds-card hero"><div class="hero__label">Valor a cobrar</div><div class="hero__price">R$ 0,00</div><p class="hero__note">Informe a coleta e a entrega para calcular.</p></div>`;
     $('#barPrice').textContent = 'Aguardando dados';
     ['#mcards', '#kmTable', '#costTable'].forEach(s => $(s).innerHTML = '<p class="note">Aguardando dados válidos.</p>');
     return;
@@ -62,11 +64,11 @@ export function renderResults(res){
   const notes = [];
   if (r.manualUsed) notes.push(`preço manual (sugerido ${brl(r.suggested)})`);
   else if (r.discAmt > 0) notes.push(`desconto de ${brl(r.discAmt)} sobre ${brl(r.suggested)}`);
-  $('#hero').innerHTML = `<div class="ds-card ds-card--gradient ds-kpi ${f.profit < 0 ? 'is-loss' : ''}">
-    <div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div>
-    <div class="ds-kpi__main"><span class="t-value">${brl(r.price)}</span></div>
-    ${notes.length ? `<div class="kpi-notes">${notes.join(', ')}</div>` : ''}
-    <div class="kpi-chips"><span class="ds-trend">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="ds-trend">Estimativa parcial</span>' : ''}</div>
+  $('#hero').innerHTML = `<div class="ds-card hero ${f.profit < 0 ? 'is-loss' : ''}">
+    <div class="hero__label">Valor a cobrar</div>
+    <div class="hero__price">${brl(r.price)}</div>
+    ${notes.length ? `<p class="hero__note">${notes.join(', ')}</p>` : ''}
+    <div class="hero__chips"><span class="chip ${f.profit < 0 ? 'chip--loss' : 'chip--ok'}">Lucro ${brl(f.profit)}</span><span class="chip">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="chip chip--warn">Estimativa parcial</span>' : ''}</div>
     ${composition(r)}</div>`;
   $('#barPrice').textContent = brl(r.price);
 
