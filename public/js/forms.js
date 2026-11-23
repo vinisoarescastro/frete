@@ -22,15 +22,16 @@ const R$ = { pre: 'R$' }, KM = { suf: 'km' }, PC = { suf: '%' };
 
 export function buildForms(){
   $('#secDados').innerHTML = [
-    field('q', 'clientName', 'Nome do cliente', { type: 'text' }),
-    field('q', 'clientPhone', 'Telefone', { type: 'tel' }),
-    field('q', 'serviceType', 'Tipo de serviço', { type: 'select', options: ['Frete', 'Entrega', 'Mudança', 'Transporte de mercadorias', 'Outros'].map(x => [x, x]) }),
-    field('q', 'date', 'Data prevista', { type: 'date' })
+    field('q', 'clientName', 'Nome', { type: 'text', ph: 'Opcional' }),
+    field('q', 'clientPhone', 'WhatsApp', { type: 'tel', ph: '(00) 00000-0000' })
   ].join('');
   $('#secDadosMais').innerHTML = [
+    field('q', 'serviceType', 'Tipo de serviço', { type: 'select', options: ['Frete', 'Entrega', 'Mudança', 'Transporte de mercadorias', 'Outros'].map(x => [x, x]) }),
+    field('q', 'date', 'Data prevista', { type: 'date' }),
     field('q', 'desc', 'Descrição da carga ou serviço', { type: 'textarea', cls: 'span2' }),
     field('q', 'notes', 'Observações para o cliente', { type: 'textarea', cls: 'span2' })
   ].join('');
+
   const rows = [
     ['homePickup', 'Residência até a coleta', 'always'],
     ['pickupDelivery', 'Coleta até a entrega (cada ida)', 'always'],
@@ -64,9 +65,9 @@ export function buildForms(){
   ].join('');
 
   $('#setEnd').innerHTML = [
-    field('s', 'home', 'Endereço residencial', { type: 'text', cls: 'span2', hint: 'Ponto de partida e de retorno.' }),
     field('s', 'providerName', 'Seu nome ou empresa', { type: 'text' }),
     field('s', 'providerPhone', 'Seu telefone', { type: 'tel' }),
+    field('s', 'home', 'Endereço residencial', { type: 'text', cls: 'span2', hint: 'Ponto de partida e de retorno.' }),
     field('s', 'validityDays', 'Validade do orçamento', { suf: 'dias' })
   ].join('');
   $('#setVei').innerHTML = [

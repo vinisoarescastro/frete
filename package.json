@@ -1,10 +1,12 @@
 {
   "name": "calculadora-de-fretes",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "description": "Calculadora de fretes com orçamento para o cliente, protegida por senha.",
   "type": "module",
-  "engines": { "node": ">=22.9" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "start": "node --env-file-if-exists=.env server/index.js",
     "dev": "node --watch --env-file-if-exists=.env server/index.js",

@@ -6,25 +6,35 @@ Node.js puro, **sem dependências** (`npm install` não é necessário).
 ## Estrutura
 
 ```
-server/            Servidor HTTP
-  index.js         Rotas, login, cabeçalhos de segurança
+server/            Servidor HTTP (Node, sem dependências)
+  index.js         Rotas, login, API, cabeçalhos de segurança
   auth.js          Sessões e bloqueio por tentativas
+  db.js            Banco SQLite (configurações, rascunho e histórico)
   maps.js          Escolhe o provedor de endereços e rotas
-  providers/       geoapify.js (com chave) e osm.js (Nominatim + OSRM, sem chave)
+  providers/       geoapify.js (com chave) e osm.js (Nominatim, Photon e OSRM, sem chave)
   static.js        Entrega de arquivos estáticos
-  config.js        Variáveis de ambiente
 views/login.html   Tela de login
 assets/            Design system (público, a tela de login também usa)
-  css/             tokens, base, components, layout, icons, fonts
-  fonts/           Poppins (hospedada localmente)
-  icons.svg        Ícones Lucide (sprite)
-  js/theme.js      Tema claro e escuro
 public/            Aplicação (só acessível após o login)
+  js/              Módulos ES: calc (regras), state, store, forms, render, quote, pdf, recent, geo, map, main
   css/app.css      Estilos próprios do app
-  vendor/leaflet/  Biblioteca do mapa (Leaflet, incluída no projeto)
-  js/              Módulos ES: calc (regras), state, forms, render, quote, geo, map, main
+  vendor/          Leaflet (mapa) e jsPDF (PDF), incluídos no projeto
+data/frete.db      Banco de dados (criado sozinho, fora do git)
 test/              Testes (npm test)
 ```
+
+## Banco de dados
+
+SQLite em arquivo único (`data/frete.db`, ou o caminho de `DB_PATH`), usando o módulo `node:sqlite` do próprio Node.
+Guarda as **configurações**, o **rascunho** do orçamento atual (continue de onde parou em outro aparelho) e o
+**histórico** de orçamentos enviados. O navegador mantém só uma cópia local, para funcionar sem conexão.
+Na VPS, o usuário do serviço precisa ter permissão de escrita na pasta `data/`. Para backup, copie o arquivo `data/frete.db`.
+
+## Enviar o orçamento
+
+- **WhatsApp:** abre a conversa com o telefone do cliente (se informado) com o texto pronto. Sem telefone, o WhatsApp pede o contato.
+- **Copiar texto:** copia o orçamento em texto simples.
+- **PDF:** gera o arquivo. No celular abre o menu de compartilhar; no computador baixa o PDF.
 
 ## Design system
 
@@ -41,7 +51,7 @@ npm start                # http://127.0.0.1:3000
 npm test
 ```
 
-Requer Node 22.9 ou superior.
+Requer Node 22.13 ou superior.
 
 ## Mapa, endereços e rotas
 
@@ -94,4 +104,4 @@ Use sempre HTTPS: sem ele a senha trafega em texto puro.
 - Todas as páginas, arquivos e `/api/*` exigem login (cookie `HttpOnly`, `SameSite=Strict`, `Secure` em HTTPS).
 - 5 senhas erradas bloqueiam o IP por 15 minutos.
 - Sessões ficam em memória: reiniciar o servidor desconecta você.
-- Os dados (configurações e rascunho do orçamento) ficam no `localStorage` do navegador, não no servidor.
+- Os dados ficam no banco SQLite do servidor (veja acima), acessível só após o login.

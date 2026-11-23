@@ -1,11 +1,13 @@
 'use strict';
-/* Orçamento para o cliente (sem dados internos): visualização, texto, imagem e impressão. */
+/* Orçamento para o cliente (sem dados internos): visualização, texto, WhatsApp e PDF. */
 import { S, Q, app } from './state.js';
 import { $, esc, brl, pctf, today, fmtDate, toast } from './utils.js';
 import { num, round2 } from './calc.js';
 import { MODE_NAME } from './render.js';
+import { buildPdf } from './pdf.js';
+import { rememberQuote } from './recent.js';
 
-function quoteData(){
+export function quoteData(){
   const r = app.last && app.last.r;
   const trips = Q.mode === 'multiple' ? String(num(Q.trips) || '') : (Q.mode === 'roundtrip' ? '1 (ida e volta)' : '1');
   const v = Math.floor(num(S.validityDays)) || 0;
@@ -24,7 +26,7 @@ function quoteData(){
   };
 }
 
-// Layout em tabelas (tela, impressão/PDF e imagem). Não expõe custos, margem ou lucro.
+// Layout em tabelas para a pré-visualização. Não expõe custos, margem ou lucro.
 export function quoteHTML(){
   const d = quoteData();
   const tbl = (title, rows) => {
@@ -67,56 +69,62 @@ function quoteText(wa){
 }
 
 // Valida o mínimo necessário antes de entregar o orçamento ao cliente
-function quoteReady(){
-  if (!app.last || !app.last.r) { toast('Corrija os erros de cálculo antes de gerar o orçamento.', 'warning'); return false; }
+export function quoteReady(){
+  if (!app.last || !app.last.r) { toast('Corrija os erros de cálculo antes de enviar o orçamento.', 'warning'); return false; }
   if (!Q.pickup.trim() || !Q.delivery.trim()) { toast('Informe os endereços de coleta e entrega.', 'warning'); return false; }
   if (!(app.last.r.price > 0)) { toast('O valor do orçamento está zerado.', 'warning'); return false; }
   return true;
 }
 
-export async function copyQuote(wa){
-  if (!quoteReady()) return;
-  const text = quoteText(wa);
-  try { await navigator.clipboard.writeText(text); }
+async function copyToClipboard(text){
+  try { await navigator.clipboard.writeText(text); return true; }
   catch {
     const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
-    let ok = false; try { ok = document.execCommand('copy'); } catch {}
-    ta.remove(); if (!ok) { toast('Não foi possível copiar. Selecione o texto manualmente.', 'danger'); return; }
+    let ok = false; try { ok = document.execCommand('copy'); } catch { /* sem suporte */ }
+    ta.remove(); return ok;
   }
-  toast(wa ? 'Texto para WhatsApp copiado.' : 'Texto copiado.');
 }
-// Gera imagem PNG do orçamento (SVG com foreignObject desenhado em canvas)
-export function saveImage(){
+
+/** Copia o texto simples (sem formatação do WhatsApp). */
+export async function copyText(){
   if (!quoteReady()) return;
-  const css = [...document.styleSheets].flatMap(sh => { try { return [...sh.cssRules]; } catch { return []; } })
-    .filter(r => r.selectorText && r.selectorText.includes('.qdoc')).map(r => r.cssText).join('\n');
-  const W = 760, holder = document.createElement('div');
-  holder.style.cssText = `position:fixed;left:-9999px;top:0;width:${W}px`;
-  holder.innerHTML = quoteHTML();
-  const el = holder.firstElementChild; el.style.width = W + 'px'; el.style.boxShadow = 'none'; el.style.borderRadius = '0';
-  document.body.appendChild(holder);
-  const H = el.offsetHeight, xhtml = new XMLSerializer().serializeToString(el);
-  holder.remove();
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${css}</style>${xhtml}</div></foreignObject></svg>`;
-  const img = new Image();
-  img.onload = () => {
-    try {
-      const c = document.createElement('canvas'), k = 2; c.width = W * k; c.height = H * k;
-      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.scale(k, k); g.drawImage(img, 0, 0);
-      c.toBlob(blob => {
-        if (!blob) { toast('Não foi possível gerar a imagem. Use o botão PDF.', 'danger'); return; }
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'orcamento-frete.png';
-        document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        toast('Imagem salva.');
-      }, 'image/png');
-    } catch { toast('Não foi possível gerar a imagem. Use o botão PDF.', 'danger'); }
-  };
-  img.onerror = () => toast('Não foi possível gerar a imagem. Use o botão PDF.', 'danger');
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  if (await copyToClipboard(quoteText(false))) { toast('Texto copiado.'); rememberQuote(); }
+  else toast('Não foi possível copiar. Selecione o texto manualmente.', 'danger');
 }
-export function printQuote(pdf){
+
+const digits = s => String(s || '').replace(/\D/g, '');
+
+/** Link do WhatsApp: abre a conversa com o cliente se houver telefone válido; senão, o WhatsApp pede o contato. */
+export function whatsappUrl(){
+  let phone = digits(Q.clientPhone);
+  if (phone.length === 10 || phone.length === 11) phone = '55' + phone;   // DDD + número: acrescenta o Brasil
+  if (phone.length < 12 || phone.length > 13) phone = '';
+  return `https://wa.me/${phone}?text=${encodeURIComponent(quoteText(true))}`;
+}
+
+export function sendWhatsApp(){
   if (!quoteReady()) return;
-  if (pdf) toast('Na janela de impressão, escolha "Salvar como PDF".', 'info');
-  setTimeout(() => window.print(), pdf ? 600 : 0);
+  window.open(whatsappUrl(), '_blank', 'noopener');   // direto no clique, para o navegador não bloquear
+  rememberQuote();
+}
+
+/** Gera o PDF. No celular abre o menu de compartilhar (WhatsApp, e-mail...); no computador baixa o arquivo. */
+export async function savePdf(){
+  if (!quoteReady()) return;
+  if (!window.jspdf) { toast('Não foi possível gerar o PDF agora. Recarregue a página.', 'danger'); return; }
+  try {
+    const d = quoteData();
+    const base = (d.client || 'cliente').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'cliente';
+    const file = new File([buildPdf(d)], `orcamento-${base}.pdf`, { type: 'application/pdf' });
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Orçamento de frete' }); }
+      catch (e) { if (e.name === 'AbortError') return; throw e; }
+    } else {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast('PDF gerado.');
+    }
+    rememberQuote();
+  } catch { toast('Não foi possível gerar o PDF.', 'danger'); }
 }

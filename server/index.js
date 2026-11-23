@@ -6,6 +6,7 @@ import { loadConfig } from './config.js';
 import { createAuth } from './auth.js';
 import { createMaps, MapsError } from './maps.js';
 import { serveStatic } from './static.js';
+import { openDb } from './db.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = join(ROOT, 'public');
@@ -31,7 +32,7 @@ function securityHeaders(res, secure){
   if (secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
 }
 
-function readBody(req, limit = 2048){
+function readBody(req, limit = 2048){   // limite maior só para rascunho e orçamentos
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
     req.on('data', c => { size += c.length; if (size > limit) { reject(Object.assign(new Error('corpo grande demais'), { status: 413 })); req.destroy(); } else chunks.push(c); });
@@ -51,13 +52,25 @@ const loginPage = (res, status, msg = '') => {
   res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(html);
 };
+async function readJson(req, limit){
+  let v; try { v = JSON.parse(await readBody(req, limit)); } catch { throw new MapsError('JSON inválido.', 400); }
+  if (!v || typeof v !== 'object' || Array.isArray(v)) throw new MapsError('Dados inválidos.', 400);
+  return v;
+}
+const clip = (v, n) => String(v ?? '').slice(0, n);
+/** Cria ou atualiza um orçamento a partir do corpo {summary, data}. */
+function saveQuote(db, id, body){
+  const sm = body.summary || {}, price = Number(sm.price);
+  if (!body.data || typeof body.data !== 'object') throw new MapsError('Dados inválidos.', 400);
+  return db.saveQuote({ id, client: clip(sm.client, 120), pickup: clip(sm.pickup, 300), delivery: clip(sm.delivery, 300), price: Number.isFinite(price) ? price : 0, data: body.data });
+}
 const parseNear = url => {
   const [lat, lon] = String(url.searchParams.get('near') || '').split(',').map(Number);
   return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-export function createApp(config, { maps = createMaps(config.maps) } = {}){
+export function createApp(config, { maps = createMaps(config.maps), db = openDb(config.dbPath) } = {}){
   const auth = createAuth(config);
 
   const isSecure = req => !!req.socket.encrypted || (config.trustProxy && req.headers['x-forwarded-proto'] === 'https');
@@ -109,6 +122,23 @@ export function createApp(config, { maps = createMaps(config.maps) } = {}){
     if (pathname === '/api/geocode' && method === 'GET') {
       return json(res, 200, await maps.geocode(url.searchParams.get('address'), parseNear(url)));
     }
+    // ---- Dados salvos (SQLite) ----
+    if (pathname === '/api/state' && method === 'GET') return json(res, 200, { settings: db.getKv('settings'), draft: db.getKv('draft') });
+    if ((pathname === '/api/settings' || pathname === '/api/draft') && method === 'PUT') {
+      const body = await readJson(req, 64 * 1024);
+      db.setKv(pathname.slice('/api/'.length), body);
+      return json(res, 200, { ok: true });
+    }
+    if (pathname === '/api/quotes' && method === 'GET') return json(res, 200, { items: db.listQuotes(url.searchParams.get('limit')) });
+    if (pathname === '/api/quotes' && method === 'POST') return json(res, 200, { id: saveQuote(db, null, await readJson(req, 64 * 1024)) });
+    const qm = pathname.match(/^\/api\/quotes\/(\d+)$/);
+    if (qm) {
+      const id = Number(qm[1]);
+      if (method === 'GET') { const r = db.getQuote(id); return r ? json(res, 200, r) : json(res, 404, { error: 'não encontrado' }); }
+      if (method === 'PUT') return json(res, 200, { id: saveQuote(db, id, await readJson(req, 64 * 1024)) });
+      if (method === 'DELETE') return json(res, db.deleteQuote(id) ? 200 : 404, { ok: true });
+    }
+
     if (pathname === '/api/suggest' && method === 'GET') {
       const q = String(url.searchParams.get('q') || '').trim().slice(0, 200);
       if (q.length < 3) return json(res, 200, { items: [] });

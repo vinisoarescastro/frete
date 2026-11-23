@@ -43,14 +43,14 @@ export function renderResults(res){
     ['#mcards', '#kmTable', '#costTable'].forEach(s => $(s).innerHTML = '<p class="note">Aguardando dados válidos.</p>');
     return;
   }
-  const f = r.fin, label = r.manualUsed ? 'Preço manual' : METHOD_NAME[r.chosen.id];
-  const notes = [esc(label), `sugerido ${brl(r.suggested)}`];
-  if (r.discAmt > 0 && !r.manualUsed) notes.push(`desconto ${brl(r.discAmt)}`);
-  if (r.diff !== 0) notes.push(`diferença ${r.diff > 0 ? '+' : ''}${brl(r.diff)} (${pctf(r.diffPct)})`);
+  const f = r.fin;
+  const notes = [];
+  if (r.manualUsed) notes.push(`preço manual (sugerido ${brl(r.suggested)})`);
+  else if (r.discAmt > 0) notes.push(`desconto de ${brl(r.discAmt)} sobre ${brl(r.suggested)}`);
   $('#hero').innerHTML = `<div class="ds-card ds-card--gradient ds-kpi ${f.profit < 0 ? 'is-loss' : ''}">
     <div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div>
     <div class="ds-kpi__main"><span class="t-value">${brl(r.price)}</span></div>
-    <div class="kpi-notes">${notes.join(', ')}</div>
+    ${notes.length ? `<div class="kpi-notes">${notes.join(', ')}</div>` : ''}
     <div class="kpi-chips"><span class="ds-trend">Lucro ${brl(f.profit)}</span><span class="ds-trend">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="ds-trend">Estimativa parcial</span>' : ''}</div></div>`;
   $('#barPrice').textContent = brl(r.price);
 

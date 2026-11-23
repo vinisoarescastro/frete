@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../server/index.js';
 import { createMaps } from '../server/maps.js';
+import { openDb } from '../server/db.js';
 
-const config = { password: 'segredo', port: 0, host: '127.0.0.1', trustProxy: false, sessionDays: 1, maps: {} };
+const config = { dbPath: ':memory:', password: 'segredo', port: 0, host: '127.0.0.1', trustProxy: false, sessionDays: 1, maps: {} };
 const fakeMaps = {
   geocode: async a => ({ found: true, lat: -16.7, lon: -49.2, name: a, approx: false }),
   route: async () => ({ meters: 12345, coords: [[1, 1], [2, 2]] }),
@@ -150,4 +151,45 @@ test('maps: sugestões (Photon) só do Brasil, com cache, e reverse', async () =
   await m.suggest('rua nove', { lat: -16.7, lon: -49.2 });
   assert.equal(calls, 1);   // segunda chamada veio do cache
   assert.equal((await m.reverse(-16.7, -49.2)).name, 'Rua A, Goiânia');
+});
+
+test('banco: configurações, rascunho e histórico de orçamentos', () => {
+  const db = openDb(':memory:');
+  assert.equal(db.getKv('settings'), null);
+  db.setKv('settings', { home: 'Rua A', margin: '50' });
+  db.setKv('settings', { home: 'Rua B' });   // substitui
+  assert.deepEqual(db.getKv('settings'), { home: 'Rua B' });
+  const id = db.saveQuote({ client: 'Ana', pickup: 'A', delivery: 'B', price: 120.5, data: { x: 1 } });
+  const same = db.saveQuote({ id, client: 'Ana Souza', pickup: 'A', delivery: 'B', price: 130, data: { x: 2 } });
+  assert.equal(same, id);   // atualiza, não duplica
+  assert.equal(db.listQuotes().length, 1);
+  assert.equal(db.listQuotes()[0].client, 'Ana Souza');
+  assert.deepEqual(db.getQuote(id).data, { x: 2 });
+  assert.equal(db.deleteQuote(id), true);
+  assert.equal(db.deleteQuote(id), false);
+  db.close();
+});
+
+test('API de dados salvos exige login e persiste configurações, rascunho e orçamentos', async () => {
+  const s = await start();
+  try {
+    assert.equal((await fetch(s.base + '/api/state')).status, 401);
+    assert.equal((await fetch(s.base + '/api/settings', { method: 'PUT', body: '{}' })).status, 401);
+    const h = { Cookie: (await login(s.base, 'segredo')).headers.get('set-cookie').split(';')[0], 'Content-Type': 'application/json' };
+    assert.deepEqual(await (await fetch(s.base + '/api/state', { headers: h })).json(), { settings: null, draft: null });
+    assert.equal((await fetch(s.base + '/api/settings', { method: 'PUT', headers: h, body: JSON.stringify({ home: 'Rua X' }) })).status, 200);
+    await fetch(s.base + '/api/draft', { method: 'PUT', headers: h, body: JSON.stringify({ pickup: 'A' }) });
+    assert.deepEqual(await (await fetch(s.base + '/api/state', { headers: h })).json(), { settings: { home: 'Rua X' }, draft: { pickup: 'A' } });
+    assert.equal((await fetch(s.base + '/api/settings', { method: 'PUT', headers: h, body: '[1]' })).status, 400);   // precisa ser objeto
+    assert.equal((await fetch(s.base + '/api/draft', { method: 'PUT', headers: h, body: 'x' })).status, 400);
+
+    const created = await (await fetch(s.base + '/api/quotes', { method: 'POST', headers: h, body: JSON.stringify({ summary: { client: 'Maria', pickup: 'A', delivery: 'B', price: 99 }, data: { mode: 'oneway' } }) })).json();
+    const upd = await (await fetch(s.base + `/api/quotes/${created.id}`, { method: 'PUT', headers: h, body: JSON.stringify({ summary: { client: 'Maria', price: 120 }, data: { mode: 'roundtrip' } }) })).json();
+    assert.equal(upd.id, created.id);
+    const list = await (await fetch(s.base + '/api/quotes', { headers: h })).json();
+    assert.equal(list.items.length, 1); assert.equal(list.items[0].price, 120);
+    assert.deepEqual((await (await fetch(s.base + `/api/quotes/${created.id}`, { headers: h })).json()).data, { mode: 'roundtrip' });
+    assert.equal((await fetch(s.base + `/api/quotes/${created.id}`, { method: 'DELETE', headers: h })).status, 200);
+    assert.equal((await fetch(s.base + `/api/quotes/${created.id}`, { headers: h })).status, 404);
+  } finally { await s.close(); }
 });

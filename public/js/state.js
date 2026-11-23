@@ -13,7 +13,7 @@ export function newQuote(){
     date: today(), notes: '',
     mode: 'oneway', trips: '2', finalDest: 'home', finalAddr: '',
     homePickup: '', pickupDelivery: '', deliveryPickup: '', deliveryFinal: '', pickupFinal: '',
-    touched: {}, pts: {}, distManual: false,
+    touched: {}, pts: {}, distManual: false, savedId: null,
     tolls: S.defTolls, parking: S.defParking, food: S.defFood, otherExp: S.defOther, hours: '',
     fuel: '', method: '2', discType: 'pct', discount: '', manual: ''
   };
@@ -22,6 +22,13 @@ export function newQuote(){
 export const Q = Object.assign(newQuote(), lsGet(KEY_Q, {}));
 Q.touched = Q.touched || {};
 Q.pts = Q.pts || {};
+
+/** Troca o conteúdo do orçamento (ex.: ao abrir um recente) mantendo a mesma referência do objeto Q. */
+export function replaceQuote(data){
+  for (const k of Object.keys(Q)) delete Q[k];
+  Object.assign(Q, newQuote(), data);
+  Q.touched = Q.touched || {}; Q.pts = Q.pts || {};
+}
 
 /** Descarta o orçamento atual mantendo a mesma referência do objeto Q. */
 export function resetQuote(){
