@@ -5,169 +5,204 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232457d6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 6h13v10H1zM14 10h4l4 4v2h-8z'/%3E%3Ccircle cx='6' cy='18' r='2'/%3E%3Ccircle cx='18' cy='18' r='2'/%3E%3C/svg%3E">
 <title>Calculadora de Fretes</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/fonts.css">
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/components.css">
+<link rel="stylesheet" href="/assets/css/layout.css">
+<link rel="stylesheet" href="/assets/css/icons.css">
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
-<link rel="stylesheet" href="/css/styles.css">
+<link rel="stylesheet" href="/css/app.css">
+<script src="/assets/js/theme.js"></script>
 </head>
 <body>
-<a class="skip" href="#main">Ir para o conteúdo</a>
+<div class="app">
+  <a href="#conteudo" class="sr-only">Pular para o conteúdo</a>
 
-<header class="top">
-  <div class="wrap">
-    <div class="brand">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v10H1zM14 10h4l4 4v2h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
-      <span>Calculadora de Fretes</span>
-    </div>
-    <nav class="tabs" role="tablist" aria-label="Seções">
-      <button id="btn-calc" role="tab" aria-selected="true" aria-controls="tab-calc" data-tab="calc" type="button">Orçamento</button>
-      <button id="btn-set" role="tab" aria-selected="false" aria-controls="tab-set" data-tab="set" type="button">Configurações</button>
+  <aside class="sidebar" id="sidebar" data-open="false" aria-label="Navegação principal">
+    <div class="sidebar__brand"><span class="sidebar__logo"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#truck"/></svg></span>Fretes</div>
+    <nav class="sidebar__nav">
+      <div class="sidebar__section">
+        <span class="sidebar__group">Principal</span>
+        <a class="nav-link" href="#/" data-route="calc" aria-current="page"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#calculator"/></svg>Orçamento</a>
+      </div>
+      <div class="sidebar__section">
+        <span class="sidebar__group">Sistema</span>
+        <a class="nav-link" href="#/configuracoes" data-route="set"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#settings"/></svg>Configurações</a>
+      </div>
     </nav>
-    <form method="post" action="/logout" class="logout"><button type="submit" class="btn ghost sm">Sair</button></form>
-  </div>
-</header>
+    <div class="sidebar__footer">
+      <div class="sidebar__user">
+        <span class="ds-avatar" id="userAvatar" aria-hidden="true">FR</span>
+        <div class="sum-text"><div class="sidebar__user-name" id="userName">Prestador</div><div class="sidebar__user-role">Calculadora de Fretes</div></div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-scrim" id="scrim" data-open="false"></div>
 
-<main id="main" class="wrap">
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="ds-icon-btn topbar__menu" id="btnMenu" aria-label="Abrir menu" aria-controls="sidebar"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#menu"/></svg></button>
+      <div class="topbar__spacer"></div>
+      <button type="button" class="ds-icon-btn" data-theme-toggle aria-label="Usar tema escuro"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#moon"/></svg></button>
+      <span class="topbar__divider" aria-hidden="true"></span>
+      <form method="post" action="/logout" class="logout"><button type="submit" class="ds-btn ds-btn--ghost ds-btn--sm"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#log-out"/></svg>Sair</button></form>
+    </header>
+
+    <main id="conteudo" class="content" tabindex="-1">
+      <div class="page">
 
 <!-- ORÇAMENTO -->
-<div id="tab-calc" role="tabpanel" aria-labelledby="btn-calc">
-  <div class="toolbar">
-    <div>
-      <h1>Novo orçamento</h1>
-      <p>Preencha o trajeto e o valor aparece ao lado.</p>
+<div id="tab-calc" class="stack stack--lg">
+  <div class="page-header">
+    <div class="page-header__text">
+      <h1 class="t-page-title">Novo orçamento</h1>
+      <p class="t-subtitle">Preencha o trajeto e o valor aparece ao lado.</p>
     </div>
-    <button class="btn danger sm" id="btnNew" type="button">Limpar tudo</button>
+    <div class="page-header__actions">
+      <button class="ds-btn ds-btn--outline" id="btnNew" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#rotate-ccw"/></svg>Limpar orçamento</button>
+    </div>
   </div>
 
-  <div class="layout">
+  <div class="grid grid--main app-layout">
 
     <!-- Entradas -->
     <div class="flow">
-      <section class="card" aria-labelledby="h-cliente">
-        <div class="card-h"><span class="step" aria-hidden="true">1</span><div><h2 id="h-cliente">Cliente e serviço</h2></div></div>
-        <div class="grid" id="secDados"></div>
-        <details class="more">
-          <summary>Descrição e observações</summary>
-          <div class="body"><div class="grid" id="secDadosMais"></div></div>
-        </details>
+      <section class="ds-card" aria-labelledby="h-cliente">
+        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#user"/></svg></span><div><h2 class="ds-card__title" id="h-cliente">Cliente e serviço</h2><p class="ds-card__desc">Dados que aparecem no orçamento.</p></div></div></div>
+        <div class="ds-card__body">
+          <div class="form-grid" id="secDados"></div>
+          <details class="collapse">
+            <summary>Descrição e observações</summary>
+            <div class="collapse__body"><div class="form-grid" id="secDadosMais"></div></div>
+          </details>
+        </div>
       </section>
 
-      <section class="card" aria-labelledby="h-trajeto">
-        <div class="card-h"><span class="step" aria-hidden="true">2</span><div><h2 id="h-trajeto">Trajeto</h2><p>Informe os endereços e a modalidade.</p></div></div>
-        <div class="grid" id="secEnd"></div>
+      <section class="ds-card" aria-labelledby="h-trajeto">
+        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#route"/></svg></span><div><h2 class="ds-card__title" id="h-trajeto">Trajeto</h2><p class="ds-card__desc">Endereços, modalidade e distâncias.</p></div></div></div>
+        <div class="ds-card__body">
+          <div class="form-grid" id="secEnd"></div>
 
-        <fieldset class="modes">
-          <legend class="lbl">Modalidade</legend>
-          <div class="modes-row">
-            <label class="mode"><input type="radio" name="mode" data-q="mode" value="oneway"><b>Somente ida</b><span>Coleta, entrega e fim</span></label>
-            <label class="mode"><input type="radio" name="mode" data-q="mode" value="roundtrip"><b>Ida e volta</b><span>Entrega e volta à coleta</span></label>
-            <label class="mode"><input type="radio" name="mode" data-q="mode" value="multiple"><b>Várias viagens</b><span>Mais de uma ida</span></label>
+          <fieldset class="ds-fieldset modes">
+            <legend>Modalidade</legend>
+            <div class="ds-option-grid">
+              <label class="ds-option"><input class="ds-option__input" type="radio" name="mode" data-q="mode" value="oneway"><span class="ds-option__text"><span class="ds-option__title">Somente ida</span><span class="ds-option__desc">Coleta, entrega e fim</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>
+              <label class="ds-option"><input class="ds-option__input" type="radio" name="mode" data-q="mode" value="roundtrip"><span class="ds-option__text"><span class="ds-option__title">Ida e volta</span><span class="ds-option__desc">Entrega e volta à coleta</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>
+              <label class="ds-option"><input class="ds-option__input" type="radio" name="mode" data-q="mode" value="multiple"><span class="ds-option__text"><span class="ds-option__title">Várias viagens</span><span class="ds-option__desc">Mais de uma ida</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>
+            </div>
+          </fieldset>
+          <div class="form-grid">
+            <div id="tripsBox" class="hidden"></div>
+            <div id="finalBox"></div>
+            <div id="finalAddrBox" class="span2 hidden"></div>
           </div>
-        </fieldset>
-        <div class="grid route-fields">
-          <div id="tripsBox" class="hidden"></div>
-          <div id="finalBox"></div>
-          <div id="finalAddrBox" class="span2 hidden"></div>
+
+          <div class="route-actions">
+            <button class="ds-btn ds-btn--primary" id="btnGeo" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#map-pin"/></svg>Localizar no mapa</button>
+            <button class="ds-btn ds-btn--outline" id="btnConfirm" type="button" hidden>Confirmar pontos e calcular</button>
+          </div>
+          <div class="status" id="geoStatus" aria-live="polite"></div>
+          <p class="note" id="geoNote">Localize os endereços, confira os pontos no mapa e confirme para calcular as distâncias. Os endereços são enviados ao serviço de mapas. Você também pode digitar as distâncias manualmente.</p>
+
+          <div id="mapBox" class="hidden"><div id="map" role="application" aria-label="Mapa do trajeto"></div><div class="legend" id="mapLegend"></div></div>
+
+          <h3 class="sub-title">Distâncias</h3>
+          <div class="drows" id="dRows"></div>
         </div>
-
-        <div class="actions route-actions">
-          <button class="btn" id="btnGeo" type="button">Localizar no mapa</button>
-          <button class="btn ghost" id="btnConfirm" type="button" hidden>Confirmar pontos e calcular</button>
-        </div>
-        <div class="status" id="geoStatus" aria-live="polite"></div>
-        <p class="note" id="geoNote">Localize os endereços, confira os pontos no mapa e confirme para calcular as distâncias. Os endereços são enviados ao serviço de mapas. Você também pode digitar as distâncias manualmente.</p>
-
-        <div id="mapBox" class="hidden"><div id="map" role="application" aria-label="Mapa do trajeto"></div><div class="legend" id="mapLegend"></div></div>
-
-        <h3 class="sub-h">Distâncias</h3>
-        <div class="drows" id="dRows"></div>
       </section>
 
-      <details class="card">
-        <summary class="card-sum">
-          <span class="step" aria-hidden="true">3</span><span class="t1">Despesas e horas</span><span class="t2">Opcional</span>
-        </summary>
-        <div class="body">
-          <p class="note lead">Começam com os valores padrão das Configurações e valem só para este orçamento.</p>
-          <div class="grid" id="secDesp"></div>
-          <div class="actions mt"><button class="btn ghost sm" id="btnDefaults" type="button">Usar valores padrão</button></div>
+      <details class="ds-card">
+        <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#wallet"/></svg></span><span class="sum-text"><span class="ds-card__title">Despesas e horas</span><span class="ds-card__desc">Opcional. Valem só para este orçamento.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
+        <div class="ds-card__body">
+          <div class="form-grid" id="secDesp"></div>
+          <div><button class="ds-btn ds-btn--outline ds-btn--sm" id="btnDefaults" type="button">Usar valores padrão</button></div>
         </div>
       </details>
     </div>
 
     <!-- Resumo -->
     <aside class="side" aria-label="Resumo do orçamento">
-      <div id="alerts" class="alerts" aria-live="polite"></div>
+      <div id="alerts" class="alerts"></div>
       <div id="hero" aria-live="polite"></div>
 
-      <section class="card">
-        <div class="actions">
-          <button class="btn grow" id="btnCopy" type="button">Copiar para WhatsApp</button>
-          <button class="btn ghost sm" id="btnCopyPlain" type="button">Texto simples</button>
-          <button class="btn ghost sm" id="btnImg" type="button">Imagem</button>
-          <button class="btn ghost sm" id="btnPdf" type="button">PDF</button>
-          <button class="btn ghost sm" id="btnPrint" type="button">Imprimir</button>
+      <section class="ds-card">
+        <div class="ds-card__body">
+          <div class="actions-grid">
+            <button class="ds-btn ds-btn--primary full" id="btnCopy" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#message-circle"/></svg>Copiar para WhatsApp</button>
+            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnCopyPlain" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#copy"/></svg>Texto simples</button>
+            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnImg" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#image"/></svg>Imagem</button>
+            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnPdf" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#file-down"/></svg>PDF</button>
+            <button class="ds-btn ds-btn--outline ds-btn--sm" id="btnPrint" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#printer"/></svg>Imprimir</button>
+          </div>
         </div>
       </section>
 
-      <section class="card">
-        <h2 class="sec-t">Ajustar preço</h2>
-        <div class="grid" id="secPreco"></div>
-        <div class="actions mt"><button class="btn ghost sm" id="btnClearManual" type="button">Limpar preço manual</button></div>
-        <details class="more">
-          <summary>Método, margem e valor mínimo</summary>
-          <div class="body">
-            <h3 class="sec-t">Método de cálculo</h3>
-            <div class="mcards" id="mcards"></div>
-            <p class="note">Os dois usam os mesmos custos reais. O Método 1 cobra por km rodado; o Método 2 usa o custo mais a margem desejada.</p>
-            <h3 class="sec-t">Parâmetros</h3>
-            <div class="grid" id="secPrecoMais"></div>
-          </div>
-        </details>
+      <section class="ds-card" aria-labelledby="h-preco">
+        <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#sliders-horizontal"/></svg></span><h2 class="ds-card__title" id="h-preco">Ajustar preço</h2></div></div>
+        <div class="ds-card__body">
+          <div class="form-grid" id="secPreco"></div>
+          <div><button class="ds-btn ds-btn--ghost ds-btn--sm" id="btnClearManual" type="button">Limpar preço manual</button></div>
+          <details class="collapse">
+            <summary>Método, margem e valor mínimo</summary>
+            <div class="collapse__body">
+              <div class="methods" id="mcards"></div>
+              <p class="note">Os dois usam os mesmos custos reais. O Método 1 cobra por km rodado; o Método 2 usa o custo mais a margem desejada.</p>
+              <div class="form-grid" id="secPrecoMais"></div>
+            </div>
+          </details>
+        </div>
       </section>
 
-      <details class="card">
-        <summary class="card-sum">
-          <span class="t1">Detalhes do cálculo</span><span class="t2">Km, custos e lucro</span>
-        </summary>
-        <div class="body">
-          <h3 class="sec-t">Quilometragem</h3><div id="kmTable"></div>
-          <h3 class="sec-t">Custos e resultado</h3><div id="costTable"></div>
+      <details class="ds-card">
+        <summary><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#receipt"/></svg></span><span class="sum-text"><span class="ds-card__title">Detalhes do cálculo</span><span class="ds-card__desc">Quilometragem, custos e lucro.</span></span><svg class="icon chev" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"/></svg></summary>
+        <div class="ds-card__body">
+          <h3 class="sub-title">Quilometragem</h3><div id="kmTable"></div>
+          <h3 class="sub-title">Custos e resultado</h3><div id="costTable"></div>
         </div>
       </details>
     </aside>
   </div>
 
-  <section class="card mt-gap" aria-labelledby="h-prev">
-    <div class="card-h"><div><h2 id="h-prev">Orçamento para o cliente</h2><p>Não mostra custos, margem nem lucro.</p></div></div>
-    <div class="qwrap" id="quotePreview"></div>
+  <section class="ds-card" aria-labelledby="h-prev">
+    <div class="ds-card__header"><div class="card-head"><span class="ds-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#file-text"/></svg></span><div><h2 class="ds-card__title" id="h-prev">Orçamento para o cliente</h2><p class="ds-card__desc">Não mostra custos, margem nem lucro.</p></div></div></div>
+    <div class="ds-card__body"><div class="qwrap" id="quotePreview"></div></div>
   </section>
 </div>
 
 <!-- CONFIGURAÇÕES -->
-<div id="tab-set" class="hidden" role="tabpanel" aria-labelledby="btn-set">
-  <div class="page-h"><h1>Configurações</h1><span class="saved">Salvas automaticamente neste navegador.</span></div>
-  <div class="settings">
-    <section class="card"><div class="card-h"><div><h2>Endereço e prestador</h2><p>A residência é o ponto de partida e de retorno.</p></div></div><div class="grid" id="setEnd"></div></section>
-    <section class="card"><div class="card-h"><div><h2>Veículo</h2><p>Consumo médio com o carro e a carretinha.</p></div></div><div class="grid" id="setVei"></div></section>
-    <section class="card"><div class="card-h"><div><h2>Custos por quilômetro</h2><p>Deixe zerado o que não souber. O lucro será uma estimativa parcial.</p></div></div><div class="grid" id="setKm"></div></section>
-    <section class="card"><div class="card-h"><div><h2>Despesas padrão</h2><p>Valores iniciais de cada novo orçamento.</p></div></div><div class="grid" id="setDesp"></div></section>
-    <section class="card"><div class="card-h"><div><h2>Lucro e preço</h2><p>Margem é o lucro dividido pelo preço de venda.</p></div></div><div class="grid" id="setLucro"></div></section>
-    <section class="card"><div class="card-h"><div><h2>Dados</h2><p>Tudo fica salvo no navegador deste aparelho.</p></div></div>
-      <div class="actions"><button class="btn danger" id="btnReset" type="button">Restaurar configurações padrão</button></div></section>
+<div id="tab-set" class="stack stack--lg hidden">
+  <div class="page-header">
+    <div class="page-header__text">
+      <h1 class="t-page-title">Configurações</h1>
+      <p class="t-subtitle">Salvas automaticamente neste navegador.</p>
+    </div>
+  </div>
+  <div class="settings-grid">
+    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Endereço e prestador</h2><p class="ds-card__desc">A residência é o ponto de partida e de retorno.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setEnd"></div></div></section>
+    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Veículo</h2><p class="ds-card__desc">Consumo médio com o carro e a carretinha.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setVei"></div></div></section>
+    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Custos por quilômetro</h2><p class="ds-card__desc">Deixe zerado o que não souber. O lucro será uma estimativa parcial.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setKm"></div></div></section>
+    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Despesas padrão</h2><p class="ds-card__desc">Valores iniciais de cada novo orçamento.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setDesp"></div></div></section>
+    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Lucro e preço</h2><p class="ds-card__desc">Margem é o lucro dividido pelo preço de venda.</p></div></div><div class="ds-card__body"><div class="form-grid" id="setLucro"></div></div></section>
+    <section class="ds-card"><div class="ds-card__header"><div><h2 class="ds-card__title">Dados</h2><p class="ds-card__desc">Tudo fica salvo no navegador deste aparelho.</p></div></div><div class="ds-card__body"><div><button class="ds-btn ds-btn--outline ds-btn--danger-text" id="btnReset" type="button"><svg class="icon" aria-hidden="true"><use href="/assets/icons.svg#trash-2"/></svg>Restaurar configurações padrão</button></div></div></section>
   </div>
 </div>
 
-<footer>Estimativas baseadas nos valores informados. Confira distâncias e custos antes de fechar o serviço.</footer>
-</main>
+<footer class="foot">Estimativas baseadas nos valores informados. Confira distâncias e custos antes de fechar o serviço.</footer>
+      </div>
+    </main>
+  </div>
+</div>
 
 <div class="bar" id="bar">
   <div class="bt"><div class="bl">Valor a cobrar</div><div class="bv" id="barPrice">Aguardando</div></div>
-  <button class="btn" id="barCopy" type="button">Copiar</button>
+  <button class="ds-btn ds-btn--primary" id="barCopy" type="button">Copiar</button>
 </div>
 
 <div id="printArea"></div>
-<div id="toast" class="toast hidden" role="status"></div>
+<div class="ds-toast-region" id="toast" aria-live="polite"></div>
 
 <script src="/vendor/leaflet/leaflet.js"></script>
 <script type="module" src="/js/main.js"></script>

@@ -1,17 +1,21 @@
 'use strict';
 /* Alertas de validação e painel de resultados. */
 import { S, Q } from './state.js';
-import { $, esc, brl, kmf, pctf, litf, sgn } from './utils.js';
+import { $, esc, brl, kmf, pctf, litf, sgn, icon } from './utils.js';
 import { num } from './calc.js';
+
+const TONE_ICON = { danger: 'circle-alert', warning: 'triangle-alert' };
+const alertBox = (tone, title, body) => `<div class="ds-alert ds-alert--${tone}" role="${tone === 'danger' ? 'alert' : 'status'}"><span class="ds-alert__icon-wrap">${icon(TONE_ICON[tone], 'icon')}</span><div class="ds-alert__body">${title ? `<div class="ds-alert__title">${title}</div>` : ''}<div class="ds-alert__text">${body}</div></div></div>`;
 
 export function renderValidation(res){
   const map = {};
   res.errors.forEach(e => { if (e.key) map[e.key] = e.msg; });
   document.querySelectorAll('[data-s],[data-q]').forEach(el => {
     const key = (el.dataset.s !== undefined ? 's.' + el.dataset.s : 'q.' + el.dataset.q);
-    const lab = el.closest('.f'); if (!lab) return;
-    lab.classList.toggle('invalid', !!map[key]);
-    const m = lab.querySelector('.msg'); if (m) m.textContent = map[key] || '';
+    const field = el.closest('.ds-field'); if (!field) return;
+    const m = field.querySelector('.msg');
+    if (map[key]) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+    if (m) { m.textContent = map[key] || ''; m.hidden = !map[key]; }
   });
 
   const missing = [];
@@ -21,12 +25,12 @@ export function renderValidation(res){
   const needSetup = useEta ? (num(S.etaPrice) <= 0 || num(S.etaKmPerL) <= 0) : (num(S.gasPrice) <= 0 || num(S.kmPerL) <= 0);
 
   let html = '';
-  if (res.errors.length) html += `<div class="al e"><b>Corrija para calcular:</b><ul>${res.errors.map(e => `<li>${esc(e.msg)}</li>`).join('')}</ul></div>`;
-  if (needSetup) html += `<div class="al w">Complete o preço e o consumo médio do combustível em <a href="#" data-goto="set">Configurações</a> para um cálculo de combustível correto.</div>`;
+  if (res.errors.length) html += alertBox('danger', 'Corrija para calcular', `<ul>${res.errors.map(e => `<li>${esc(e.msg)}</li>`).join('')}</ul>`);
+  if (needSetup) html += alertBox('warning', '', 'Complete o preço e o consumo médio do combustível em <a href="#/configuracoes">Configurações</a> para um cálculo de combustível correto.');
   const w = res.warnings.slice();
   if (missing.length) w.push('Faltam informações para o orçamento: ' + missing.join(' e ') + '.');
   if ($('#geoNote').dataset.stale) w.push('Os endereços mudaram desde o último cálculo automático. Recalcule ou revise as distâncias.');
-  if (w.length) html += `<div class="al w"><ul>${w.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+  if (w.length) html += alertBox('warning', '', `<ul>${w.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`);
   $('#alerts').innerHTML = html;
 }
 
@@ -39,7 +43,7 @@ const METHOD_NAME = { '1': 'Método 1: preço por km', '2': 'Método 2: custos e
 export function renderResults(res){
   const r = res.r;
   if (!r) {
-    $('#hero').innerHTML = `<div class="hero"><div class="hl">Valor a cobrar</div><div class="hv">R$ 0,00</div><div class="hs">Informe o trajeto e as distâncias para calcular.</div></div>`;
+    $('#hero').innerHTML = `<div class="ds-card ds-card--gradient ds-kpi"><div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div><div class="ds-kpi__main"><span class="t-value">R$ 0,00</span></div><div class="kpi-notes">Informe o trajeto e as distâncias para calcular.</div></div>`;
     $('#barPrice').textContent = 'Aguardando dados';
     ['#mcards', '#kmTable', '#costTable'].forEach(s => $(s).innerHTML = '<p class="note">Aguardando dados válidos.</p>');
     return;
@@ -48,29 +52,25 @@ export function renderResults(res){
   const notes = [esc(label), `sugerido ${brl(r.suggested)}`];
   if (r.discAmt > 0 && !r.manualUsed) notes.push(`desconto ${brl(r.discAmt)}`);
   if (r.diff !== 0) notes.push(`diferença ${r.diff > 0 ? '+' : ''}${brl(r.diff)} (${pctf(r.diffPct)})`);
-  $('#hero').innerHTML = `<div class="hero ${f.profit < 0 ? 'loss' : ''}">
-    <div class="hl">Valor a cobrar</div><div class="hv">${brl(r.price)}</div>
-    <div class="hs">${notes.join(', ')}</div>
-    <div class="chips"><span class="chip">Lucro ${brl(f.profit)}</span><span class="chip">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="chip warn">Estimativa parcial</span>' : ''}</div></div>`;
+  $('#hero').innerHTML = `<div class="ds-card ds-card--gradient ds-kpi ${f.profit < 0 ? 'is-loss' : ''}">
+    <div class="ds-kpi__top"><span class="ds-kpi__label">Valor a cobrar</span></div>
+    <div class="ds-kpi__main"><span class="t-value">${brl(r.price)}</span></div>
+    <div class="kpi-notes">${notes.join(', ')}</div>
+    <div class="kpi-chips"><span class="ds-trend">Lucro ${brl(f.profit)}</span><span class="ds-trend">Margem ${pctf(f.margin)}</span>${r.partial ? '<span class="ds-trend">Estimativa parcial</span>' : ''}</div></div>`;
   $('#barPrice').textContent = brl(r.price);
 
-  // Cartões de comparação
-  const card = (m, extra) => {
-    const sel = r.chosen.id === m.id && true;
-    if (!m.available) return `<div class="mcard ${sel ? 'sel' : ''}" data-method="${m.id}" tabindex="0" role="button"><div class="mh"><span class="rd"></span>${METHOD_NAME[m.id]}</div><p class="note">Informe o valor cobrado por km para usar este método.${Number.isFinite(r.reqRate) ? `<br>Para atingir a margem desejada: <b>${brl(r.reqRate)}/km</b>.` : ''}</p></div>`;
-    return `<div class="mcard ${r.chosen.id === m.id ? 'sel' : ''}" data-method="${m.id}" tabindex="0" role="button" aria-pressed="${r.chosen.id === m.id}">
-      <div class="mh"><span class="rd"></span>${METHOD_NAME[m.id]}</div>
-      <table class="t"><tr><td>Custo estimado</td><td>${brl(r.c.total)}</td></tr>
-      <tr><td>Margem efetiva<br><small>acréscimo s/ custo: ${m.markup == null ? 'n/d' : pctf(m.markup)}</small></td><td>${pctf(m.margin)}</td></tr>
-      <tr><td>Lucro estimado</td><td class="${sgn(m.profit)}">${brl(m.profit)}</td></tr></table>
-      <div class="big">${brl(m.price)}</div><small class="note">Preço sugerido${m.minApplied ? ' (mínimo aplicado)' : ''}</small>${extra || ''}</div>`;
-  };
-  $('#mcards').innerHTML = card(r.m1, Number.isFinite(r.reqRate) ? `<p class="note">Valor/km para a margem desejada: ${brl(r.reqRate)}</p>` : '') + card(r.m2);
+  // Escolha do método (cartões de opção do design system)
+  const option = (m, desc, disabled) => `<label class="ds-option"><input class="ds-option__input" type="radio" name="method" value="${m.id}" data-method="${m.id}" ${r.chosen.id === m.id ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span class="ds-option__text"><span class="ds-option__title">${METHOD_NAME[m.id]}</span><span class="ds-option__desc">${desc}</span></span><span class="ds-option__mark ds-option__mark--radio" aria-hidden="true"></span></label>`;
+  const m1desc = r.m1.available
+    ? `Sugerido <b>${brl(r.m1.price)}</b>, margem ${pctf(r.m1.margin)}, lucro ${brl(r.m1.profit)}${Number.isFinite(r.reqRate) ? `. Valor por km para a margem desejada: ${brl(r.reqRate)}.` : ''}`
+    : `Informe o valor cobrado por km para usar este método.${Number.isFinite(r.reqRate) ? ` Para atingir a margem desejada: <b>${brl(r.reqRate)}/km</b>.` : ''}`;
+  const m2desc = `Sugerido <b>${brl(r.m2.price)}</b>${r.m2.minApplied ? ' (mínimo aplicado)' : ''}, margem ${pctf(r.m2.margin)}, lucro ${brl(r.m2.profit)}`;
+  $('#mcards').innerHTML = option(r.m1, m1desc, !r.m1.available) + option(r.m2, m2desc, false);
 
   // Quilometragem
   const k = r.km, back = r.mode === 'roundtrip' ? 'Retorno à coleta' : 'Retornos intermediários';
   const fin = Q.finalDest === 'home' ? 'residência' : 'outro endereço';
-  $('#kmTable').innerHTML = `<table class="t">
+  $('#kmTable').innerHTML = `<table class="ds-table kv">
     <tr><td>Modalidade</td><td>${MODE_NAME[r.mode]}</td></tr>
     <tr><td>Quantidade de viagens</td><td>${k.trips}${r.mode === 'roundtrip' ? ' (ida e volta)' : ''}</td></tr>
     <tr><td>Deslocamento inicial <small>(residência para coleta)</small></td><td>${kmf(k.initial)}</td></tr>
@@ -81,7 +81,7 @@ export function renderResults(res){
 
   // Custos e resultado
   const c = r.c, pr = r.p, row = (l, v, cls = '') => `<tr class="${cls}"><td>${l}</td><td>${v}</td></tr>`;
-  $('#costTable').innerHTML = `<table class="t">
+  $('#costTable').innerHTML = `<table class="ds-table kv">
     ${row('Consumo estimado de combustível', litf(c.fuelL))}
     ${row('Combustível (' + r.fuelName + ')', brl(c.fuel), 'sub')}${row('Manutenção', brl(c.maint), 'sub')}${row('Pneus', brl(c.tires), 'sub')}
     ${row('Depreciação', brl(c.deprec), 'sub')}${row('Outros custos operacionais', brl(c.otherKm), 'sub')}

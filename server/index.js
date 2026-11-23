@@ -9,6 +9,7 @@ import { serveStatic } from './static.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = join(ROOT, 'public');
+const ASSETS = join(ROOT, 'assets');   // estilos, fontes e ícones do design system: públicos (a tela de login também usa)
 const LOGIN_HTML = readFileSync(join(ROOT, 'views', 'login.html'), 'utf8');
 
 // Política de segurança do conteúdo: o app só carrega recursos próprios e as imagens do mapa do OpenStreetMap
@@ -45,7 +46,8 @@ const json = (res, status, data) => {
 };
 const redirect = (res, to, headers = {}) => { res.writeHead(303, { Location: to, ...headers }); res.end(); };
 const loginPage = (res, status, msg = '') => {
-  const html = LOGIN_HTML.replace('{{MSG}}', msg ? `<p class="err" role="alert">${msg}</p>` : '');
+  const alert = msg ? `<div class="ds-alert ds-alert--danger" role="alert"><span class="ds-alert__icon-wrap"><svg class="icon" width="20" height="20" aria-hidden="true"><use href="/assets/icons.svg#circle-alert"/></svg></span><div class="ds-alert__body"><div class="ds-alert__text">${msg}</div></div></div>` : '';
+  const html = LOGIN_HTML.replace('{{MSG}}', alert);
   res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(html);
 };
@@ -64,6 +66,11 @@ export function createApp(config, { maps = createMaps(config.maps) } = {}){
     const { pathname } = url, method = req.method;
 
     if (pathname === '/healthz') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('ok'); }
+
+    if (pathname.startsWith('/assets/') && (method === 'GET' || method === 'HEAD')) {
+      if (await serveStatic(req, res, ASSETS, pathname.slice('/assets'.length))) return;
+      res.writeHead(404); return res.end();
+    }
 
     const token = auth.tokenFrom(req), authed = auth.valid(token);
 

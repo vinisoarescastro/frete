@@ -43,6 +43,10 @@ test('sem login: páginas redirecionam e API devolve 401', async () => {
     assert.equal((await fetch(s.base + '/js/main.js', { redirect: 'manual' })).status, 303);
     assert.equal((await fetch(s.base + '/api/geocode?address=x')).status, 401);
     assert.equal((await fetch(s.base + '/login')).status, 200);
+    // estilos, fontes e ícones do design system são públicos (a tela de login precisa deles)
+    assert.equal((await fetch(s.base + '/assets/css/tokens.css')).status, 200);
+    assert.equal((await fetch(s.base + '/assets/icons.svg')).status, 200);
+    assert.equal((await fetch(s.base + '/assets/../package.json', { redirect: 'manual' })).status !== 200, true);
   } finally { await s.close(); }
 });
 

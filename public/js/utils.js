@@ -16,8 +16,14 @@ export function lsGet(key, fallback){
 }
 export function lsSet(key, val){ try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* armazenamento indisponível */ } }
 
+/** Ícone do sprite do design system (Lucide). */
+export const icon = (name, cls = 'icon') => `<svg class="${cls}" aria-hidden="true"><use href="/assets/icons.svg#${name}"/></svg>`;
+
+const TOAST_ICON = { success: 'circle-check', warning: 'triangle-alert', danger: 'circle-alert', info: 'info' };
 let toastTimer;
-export function toast(msg){
-  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), 3200);
+/** Aviso temporário no padrão do design system. tone: success | warning | danger | info. */
+export function toast(msg, tone = 'success'){
+  const region = $('#toast');
+  region.innerHTML = `<div class="ds-toast ds-toast--${tone}" role="status"><span class="ds-toast__icon">${icon(TOAST_ICON[tone] || 'info')}</span><div class="ds-toast__body"><div class="ds-toast__title">${esc(msg)}</div></div><span class="ds-toast__timer" style="animation-duration:4s"></span></div>`;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { region.innerHTML = ''; }, 4000);
 }

@@ -21,26 +21,41 @@ function refresh(){
   renderValidation(app.last);
   renderResults(app.last);
   $('#quotePreview').innerHTML = quoteHTML();
+  const name = (S.providerName || '').trim() || 'Prestador';
+  $('#userName').textContent = name;
+  $('#userAvatar').textContent = name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
   lsSet(KEY_S, S); lsSet(KEY_Q, Q);
 }
 
+const ROUTES = { '#/': 'calc', '#/configuracoes': 'set' };
 function showTab(name){
   $('#tab-calc').classList.toggle('hidden', name !== 'calc');
   $('#tab-set').classList.toggle('hidden', name !== 'set');
-  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  document.querySelectorAll('[data-route]').forEach(a => {
+    if (a.dataset.route === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  setMenu(false);
   window.scrollTo(0, 0);
 }
+const route = () => showTab(ROUTES[location.hash] || 'calc');
+window.addEventListener('hashchange', route);
+
+// Menu lateral no celular
+function setMenu(open){
+  $('#sidebar').dataset.open = String(open); $('#scrim').dataset.open = String(open);
+  $('#btnMenu').setAttribute('aria-expanded', String(open));
+}
+$('#btnMenu').addEventListener('click', () => setMenu($('#sidebar').dataset.open !== 'true'));
+$('#scrim').addEventListener('click', () => setMenu(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 
 document.addEventListener('click', e => {
-  const tab = e.target.closest('[data-tab]'); if (tab) showTab(tab.dataset.tab);
-  const go = e.target.closest('[data-goto]'); if (go) { e.preventDefault(); showTab(go.dataset.goto); }
-  const mc = e.target.closest('[data-method]'); if (mc) { Q.method = mc.dataset.method; update(); }
   const rs = e.target.closest('[data-reset]');
   if (rs) { Q.touched[rs.closest('.drow').dataset.key] = false; update(); }
 });
-document.addEventListener('keydown', e => {
+document.addEventListener('change', e => {
   const mc = e.target.closest && e.target.closest('[data-method]');
-  if (mc && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); Q.method = mc.dataset.method; update(); }
+  if (mc && mc.checked) { Q.method = mc.dataset.method; update(); }
 });
 $('#btnGeo').addEventListener('click', locateAddresses);
 $('#btnConfirm').addEventListener('click', confirmRoutes);
@@ -68,4 +83,5 @@ window.addEventListener('afterprint', () => { $('#printArea').innerHTML = ''; })
 /* Início */
 setUpdater(refresh);
 buildForms();
+route();
 update();

@@ -14,12 +14,24 @@ server/            Servidor HTTP
   static.js        Entrega de arquivos estáticos
   config.js        Variáveis de ambiente
 views/login.html   Tela de login
+assets/            Design system (público, a tela de login também usa)
+  css/             tokens, base, components, layout, icons, fonts
+  fonts/           Poppins (hospedada localmente)
+  icons.svg        Ícones Lucide (sprite)
+  js/theme.js      Tema claro e escuro
 public/            Aplicação (só acessível após o login)
-  css/styles.css
+  css/app.css      Estilos próprios do app
   vendor/leaflet/  Biblioteca do mapa (Leaflet, incluída no projeto)
   js/              Módulos ES: calc (regras), state, forms, render, quote, geo, map, main
 test/              Testes (npm test)
 ```
+
+## Design system
+
+A interface segue o Atlas Design System (repositório `design-system`, lido apenas como referência).
+Tokens, base, componentes e layout foram copiados para `assets/css/` (classes `ds-*`, `.sidebar`, `.page`, etc.) e os ícones
+Lucide vêm de `assets/icons.svg`. Para atualizar, copie de novo os arquivos do design system; os estilos específicos
+do app ficam só em `public/css/app.css`. O tema (claro/escuro) usa `data-theme` no `<html>` e a chave `theme` do localStorage.
 
 ## Rodar localmente
 

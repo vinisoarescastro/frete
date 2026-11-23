@@ -1,17 +1,22 @@
 'use strict';
 /* Formulários gerados por configuração e ligação entre campos e estado. */
 import { S, Q, update } from './state.js';
-import { $ } from './utils.js';
+import { $, icon } from './utils.js';
 
 export function field(scope, key, label, o = {}){
   const attr = scope === 's' ? 'data-s' : 'data-q';
   const type = o.type || 'number';
-  let input;
-  if (type === 'textarea') input = `<textarea ${attr}="${key}" rows="${o.rows || 2}" placeholder="${o.ph || ''}"></textarea>`;
-  else if (type === 'select') input = `<select ${attr}="${key}">${o.options.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>`;
-  else input = `<input ${attr}="${key}" type="${type}" ${type === 'number' ? 'step="any" inputmode="decimal"' : ''} placeholder="${o.ph || ''}" autocomplete="off">`;
-  const hint = o.hint ? `<small class="hint">${o.hint}</small>` : '';
-  return `<label class="f ${o.cls || ''}"><span class="lbl">${label}</span><div class="inp">${o.pre ? `<span class="ad">${o.pre}</span>` : ''}${input}${o.suf ? `<span class="ad">${o.suf}</span>` : ''}</div>${hint}<small class="msg"></small></label>`;
+  let control;
+  if (type === 'textarea') control = `<textarea class="ds-control" ${attr}="${key}" rows="${o.rows || 3}" placeholder="${o.ph || ''}"></textarea>`;
+  else if (type === 'select') control = `<div class="ds-input-wrap"><select class="ds-control" ${attr}="${key}">${o.options.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>${icon('chevron-down', 'icon ds-input-wrap__end')}</div>`;
+  else {
+    const input = `<input class="ds-control" ${attr}="${key}" type="${type}" ${type === 'number' ? 'step="any" inputmode="decimal"' : ''} placeholder="${o.ph || ''}" autocomplete="off">`;
+    control = o.pre || o.suf
+      ? `<div class="ds-group">${o.pre ? `<span class="ds-group__addon ds-group__addon--start">${o.pre}</span>` : ''}${input}${o.suf ? `<span class="ds-group__addon ds-group__addon--end">${o.suf}</span>` : ''}</div>`
+      : input;
+  }
+  const hint = o.hint ? `<p class="ds-help">${o.hint}</p>` : '';
+  return `<label class="ds-field ${o.cls || ''}"><span class="ds-label">${label}</span>${control}${hint}<p class="ds-error msg" hidden></p></label>`;
 }
 const R$ = { pre: 'R$' }, KM = { suf: 'km' }, PC = { suf: '%' };
 
@@ -43,7 +48,7 @@ export function buildForms(){
     ['pickupFinal', 'Coleta até o destino final', 'roundtrip']
   ];
   $('#dRows').innerHTML = rows.map(([k, l, m]) =>
-    `<div class="drow" data-key="${k}" data-modes="${m}">${field('q', k, `<span data-lbl>${l}</span>`, { ...KM, ph: '0' })}<div class="dx"><span class="tag" data-tag></span><button class="mini hidden" type="button" data-reset title="Voltar a copiar o trecho inverso">Restaurar</button><a class="lnk hidden" target="_blank" rel="noopener" data-map>Ver no Maps</a></div></div>`).join('');
+    `<div class="drow" data-key="${k}" data-modes="${m}">${field('q', k, `<span data-lbl>${l}</span>`, { ...KM, ph: '0' })}<div class="dx"><span class="ds-badge ds-badge--sm" data-tag></span><button class="ds-btn ds-btn--ghost ds-btn--sm hidden" type="button" data-reset title="Voltar a copiar o trecho inverso">Restaurar</button><a class="hidden" target="_blank" rel="noopener" data-map>Ver no Maps</a></div></div>`).join('');
 
   $('#secDesp').innerHTML = [
     field('q', 'tolls', 'Pedágios', R$), field('q', 'parking', 'Estacionamento', R$),
@@ -148,7 +153,7 @@ export function renderRoute(){
     const mirrored = MIRROR_KEYS.includes(k) && !Q.touched[k] && (k === 'deliveryPickup' || Q.finalDest === 'home');
     const tag = row.querySelector('[data-tag]');
     tag.textContent = mirrored ? 'igual ao trecho inverso' : (Q.touched[k] ? 'manual' : '');
-    tag.classList.toggle('auto', mirrored);
+    tag.classList.toggle('ds-badge--success', mirrored);
     tag.classList.toggle('hidden', !tag.textContent);
     row.querySelector('[data-reset]').classList.toggle('hidden', !(MIRROR_KEYS.includes(k) && Q.touched[k]));
     const [a, b] = pairs[k], link = row.querySelector('[data-map]');

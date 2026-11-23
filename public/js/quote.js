@@ -68,9 +68,9 @@ function quoteText(wa){
 
 // Valida o mínimo necessário antes de entregar o orçamento ao cliente
 function quoteReady(){
-  if (!app.last || !app.last.r) { toast('Corrija os erros de cálculo antes de gerar o orçamento.'); return false; }
-  if (!Q.pickup.trim() || !Q.delivery.trim()) { toast('Informe os endereços de coleta e entrega.'); return false; }
-  if (!(app.last.r.price > 0)) { toast('O valor do orçamento está zerado.'); return false; }
+  if (!app.last || !app.last.r) { toast('Corrija os erros de cálculo antes de gerar o orçamento.', 'warning'); return false; }
+  if (!Q.pickup.trim() || !Q.delivery.trim()) { toast('Informe os endereços de coleta e entrega.', 'warning'); return false; }
+  if (!(app.last.r.price > 0)) { toast('O valor do orçamento está zerado.', 'warning'); return false; }
   return true;
 }
 
@@ -82,7 +82,7 @@ export async function copyQuote(wa){
     const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
     let ok = false; try { ok = document.execCommand('copy'); } catch {}
-    ta.remove(); if (!ok) { toast('Não foi possível copiar. Selecione o texto manualmente.'); return; }
+    ta.remove(); if (!ok) { toast('Não foi possível copiar. Selecione o texto manualmente.', 'danger'); return; }
   }
   toast(wa ? 'Texto para WhatsApp copiado.' : 'Texto copiado.');
 }
@@ -105,18 +105,18 @@ export function saveImage(){
       const c = document.createElement('canvas'), k = 2; c.width = W * k; c.height = H * k;
       const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.scale(k, k); g.drawImage(img, 0, 0);
       c.toBlob(blob => {
-        if (!blob) { toast('Não foi possível gerar a imagem. Use "Salvar em PDF".'); return; }
+        if (!blob) { toast('Não foi possível gerar a imagem. Use o botão PDF.', 'danger'); return; }
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'orcamento-frete.png';
         document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
         toast('Imagem salva.');
       }, 'image/png');
-    } catch { toast('Não foi possível gerar a imagem. Use "Salvar em PDF".'); }
+    } catch { toast('Não foi possível gerar a imagem. Use o botão PDF.', 'danger'); }
   };
-  img.onerror = () => toast('Não foi possível gerar a imagem. Use "Salvar em PDF".');
+  img.onerror = () => toast('Não foi possível gerar a imagem. Use o botão PDF.', 'danger');
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 export function printQuote(pdf){
   if (!quoteReady()) return;
-  if (pdf) toast('Na janela de impressão, escolha "Salvar como PDF".');
+  if (pdf) toast('Na janela de impressão, escolha "Salvar como PDF".', 'info');
   setTimeout(() => window.print(), pdf ? 600 : 0);
 }
